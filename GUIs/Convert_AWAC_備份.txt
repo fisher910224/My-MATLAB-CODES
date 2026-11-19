@@ -1,0 +1,1875 @@
+classdef Convert_raw_data_AWAC < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        UIFigure                       matlab.ui.Figure
+        Panel                          matlab.ui.container.Panel
+        StartRow0AutoEditField         matlab.ui.control.NumericEditField
+        StartRow0AutoLabel             matlab.ui.control.Label
+        InputdataEditField             matlab.ui.control.EditField
+        BrowseButton                   matlab.ui.control.Button
+        ItemtypeDropDown               matlab.ui.control.DropDown
+        StationnameEditField           matlab.ui.control.EditField
+        OutputfolderEditField          matlab.ui.control.EditField
+        OutputfolderEditFieldLabel     matlab.ui.control.Label
+        BrowseButton_2                 matlab.ui.control.Button
+        OutputdatafiletypeLabel        matlab.ui.control.Label
+        csvCheckBox                    matlab.ui.control.CheckBox
+        txtCheckBox                    matlab.ui.control.CheckBox
+        matCheckBox                    matlab.ui.control.CheckBox
+        StartOutputFileButton          matlab.ui.control.Button
+        ItemtypeDropDownLabel          matlab.ui.control.Label
+        StationnameEditFieldLabel      matlab.ui.control.Label
+        InputdataEditFieldLabel        matlab.ui.control.Label
+        QCInputPanel                   matlab.ui.container.Panel
+        SelectAllCheckBox              matlab.ui.control.CheckBox
+        StationnameEditField_2         matlab.ui.control.EditField
+        StationnameEditField_2Label    matlab.ui.control.Label
+        PropertiesButton               matlab.ui.control.Button
+        OutputfolderEditField_2        matlab.ui.control.EditField
+        OutputfolderEditField_2Label   matlab.ui.control.Label
+        BrowseButton_4                 matlab.ui.control.Button
+        BrowseButton_3                 matlab.ui.control.Button
+        QCItemDropDown                 matlab.ui.control.DropDown
+        QCItemDropDownLabel            matlab.ui.control.Label
+        SuggestedLabel                 matlab.ui.control.Label
+        StronglyRecommendedLabel       matlab.ui.control.Label
+        RequiredLabel                  matlab.ui.control.Label
+        StartQCButton                  matlab.ui.control.Button
+        SelectfileEditField            matlab.ui.control.EditField
+        SelectfileEditFieldLabel       matlab.ui.control.Label
+        Test1TimeGapTestCheckBox       matlab.ui.control.CheckBox
+        Test2SyntaxTestCheckBox        matlab.ui.control.CheckBox
+        Test3LocationTestCheckBox      matlab.ui.control.CheckBox
+        Test4GrossTestCheckBox         matlab.ui.control.CheckBox
+        Test5ClimatologyTestCheckBox   matlab.ui.control.CheckBox
+        Test6SpikeTestCheckBox         matlab.ui.control.CheckBox
+        Test7RateofChangeTestCheckBox  matlab.ui.control.CheckBox
+        Test8FlatLineTestCheckBox      matlab.ui.control.CheckBox
+        Test9MutiVariateTestCheckBox   matlab.ui.control.CheckBox
+        Test10AttenuatedSignalTestCheckBox  matlab.ui.control.CheckBox
+        Test11NeighborTestCheckBox     matlab.ui.control.CheckBox
+    end
+
+    
+    properties (Access = private)
+        input_folder = ""
+        InputItem = "" % Description
+        Inputfile = ""
+        InputfileItem = ""
+        stationname = ""
+        input_folder_2 = ""
+        InputItem_2 = ""
+        Inputfile_2 = ""
+        % ============================ Current settings ===========================
+        CU_QCsettings = struct("t1_suspect", 1/60, "t1_fail", 5/60, ...
+            "t4_sensor_range", [-15 15], "t4_user_range", [0 2], ...
+            "t5_sensor_range", repmat([-15 15], 12, 1), "t5_user_range", repmat([0 1.2], 12, 1), ...
+            "t6_threshold_low", 0.6, "t6_threshold_high", 1.0, ...
+            "t7_n_dev", 3, "t7_tim_dev_hours", 8, ...
+            "t8_rep_suspect", 3, "t8_rep_fail", 5, "t8_esp_val", 0.001, ...
+            "t10_min_var_warn", 0.045, "t10_min_var_fail", 0.005, "t10_n_tst", 12);
+        % ========================= Current Dir. settings =========================
+        CD_QCsettings = struct("t1_suspect", 1/60, "t1_fail", 5/60, ...
+            "t4_sensor_range", [0 360], "t4_user_range", [0 360], ...
+            "t5_sensor_range", repmat([0 360], 12, 1), "t5_user_range", repmat([0 360], 12, 1), ...
+            "t6_threshold_low", 0.6, "t6_threshold_high", 1.0, ...
+            "t7_n_dev", 3, "t7_tim_dev_hours", 8, ...
+            "t8_rep_suspect", 3, "t8_rep_fail", 5, "t8_esp_val", 0.001, ...
+            "t10_min_var_warn", 0.045, "t10_min_var_fail", 0.005, "t10_n_tst", 12);
+        % ============================= Wave settings (HS) ========================
+        WV_QCsettings = struct("t1_suspect", 1/60, "t1_fail", 5/60, ...
+            "t4_sensor_range", [0 40], "t4_user_range", [0 10], ...
+            "t5_sensor_range", repmat([0 40], 12, 1), "t5_user_range", repmat([0 10], 12, 1), ...
+            "t6_threshold_low", 1, "t6_threshold_high", 2, ...
+            "t7_n_dev", 5, "t7_tim_dev_hours", 8, ...
+            "t8_rep_suspect", 3, "t8_rep_fail", 5, "t8_esp_val", 0.01, ...
+            "t10_min_var_warn", 0.01, "t10_min_var_fail", 0.005, "t10_n_tst", 12);
+        % ============================= Wave settings (Tp) ========================
+        TP_QCsettings = struct("t1_suspect", 1/60, "t1_fail", 5/60, ...
+            "t4_sensor_range", [0 30], "t4_user_range", [0 20], ...
+            "t5_sensor_range", repmat([0 30], 12, 1), "t5_user_range", repmat([0 20], 12, 1), ...
+            "t6_threshold_low", 1, "t6_threshold_high", 2, ...
+            "t7_n_dev", 5, "t7_tim_dev_hours", 8, ...
+            "t8_rep_suspect", 3, "t8_rep_fail", 5, "t8_esp_val", 0.01, ...
+            "t10_min_var_warn", 1/10, "t10_min_var_fail", 1/20, "t10_n_tst", 12);
+
+       % ============================= Wave settings (Dir) =======================
+        WVD_QCsettings = struct("t1_suspect", 1/60, "t1_fail", 5/60, ...
+            "t4_sensor_range", [0 360], "t4_user_range", [0 360], ...
+            "t5_sensor_range", repmat([0 360], 12, 1), "t5_user_range", repmat([0 360], 12, 1), ...
+            "t6_threshold_low", 0.6, "t6_threshold_high", 1.0, ...
+            "t7_n_dev", 3, "t7_tim_dev_hours", 8, ...
+            "t8_rep_suspect", 3, "t8_rep_fail", 5, "t8_esp_val", 0.001, ...
+            "t10_min_var_warn", 0.045, "t10_min_var_fail", 0.005, "t10_n_tst", 12);
+        lowest_SL = 10
+        StartLine = []
+        sr = 0
+
+        ProcessedData
+        Outputfile
+        output_folder = ""
+        Outputfiletype = struct('csv', false, 'txt', false, 'mat', false)
+        QC_switch = struct('Test1', "off", ...
+            'Test2', "off", ...
+            'Test3', "off", ...
+            'Test4', "off", ...
+            'Test5', "off", ...
+            'Test6', "off", ...
+            'Test7', "off", ...
+            'Test8', "off", ...
+            'Test9', "off", ...
+            'Test10', "off", ...
+            'Test11', "off");
+        QCItem = ""
+    end
+    
+
+    methods (Access = private)
+    function autoDetectItemType(app)
+        inputpath = app.InputdataEditField.Value;
+        
+        % 檢查路徑是否為空
+        if isempty(inputpath) || inputpath == "select input data..."
+            return; 
+        end
+
+        inputfilename = app.Inputfile;
+        
+        % 注意：邏輯順序很重要！
+        % 必須先判斷 "stemp" 再判斷 "temp"，否則 "stemp" 也包含 "temp" 字串，會被攔截。
+        % if contains(inputfilename, "潮位站_stemp", "IgnoreCase", true)
+        %     app.ItemtypeDropDown.Value = "CWA tidal station: Sea Temperature";
+        %     app.InputItem = "t_stemp";
+        % elseif contains(inputfilename, ["stemp", "sea"], "IgnoreCase", true)
+        %     app.ItemtypeDropDown.Value = "CWA buoy: Sea Temperature";
+        %     app.InputItem = "stemp";
+        % elseif contains(inputfilename, "temp", "IgnoreCase", true)
+        %     app.ItemtypeDropDown.Value = "CWA buoy: Temperature";
+        %     app.InputItem = "temp";
+        % elseif contains(inputfilename, "tide", "IgnoreCase", true)
+        %     app.ItemtypeDropDown.Value = "CWA tidal station: Sea Level";
+        %     app.InputItem = "tide";
+        % elseif contains(inputfilename, ["curr", "cur"], "IgnoreCase", true)
+        %     app.ItemtypeDropDown.Value = "CWA buoy: Current";
+        %     app.InputItem = "curr";
+        % elseif contains(inputfilename, ["wave", ".wap"], "IgnoreCase", true)
+        %     % app.ItemtypeDropDown.Value = "CWA buoy: Wave";
+        %     % dd = detectImportOptions(inputfilename);
+        %     app.ItemtypeDropDown.Value = "AWAC & AQP: Wave(21 columns)";
+        %     app.InputItem = "wave_21";
+        % elseif contains(inputfilename, "wind", "IgnoreCase", true)
+        %     app.ItemtypeDropDown.Value = "CWA buoy: Wind";
+        %     app.InputItem = "wind";
+        % elseif contains(inputfilename, "pres", "IgnoreCase", true)
+        %     app.ItemtypeDropDown.Value = "CWA buoy: Atmosphere Pressure";
+        %     app.InputItem = "pres";
+        if contains(inputfilename, ["wave", ".wap"], "IgnoreCase", true)
+            % app.ItemtypeDropDown.Value = "CWA buoy: Wave";
+            % dd = detectImportOptions(inputfilename);
+            app.ItemtypeDropDown.Value = "AWAC & AQP: Wave(21 columns)";
+            app.InputItem = "wave_21";
+        end
+    end
+
+        function percent_table = Wind_Beaufort_scale_statistics(app, Beaufort_scale, Dir, file_path)
+            % 1. 定義級數與方向
+            % Beaufort 從 0 到 12 (或 17，視資料而定)
+            max_beaufort = 17;
+            b_levels = 0:max_beaufort; 
+            
+            % 方向 16 方位
+            directions_str = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", ...
+                              "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+            
+            % 2. 方向角前處理 (處理北風跨越 0/360 度的問題)
+            % N 的區間是 348.75~360 與 0~11.25
+            % 將 > 348.75 的度數減去 360，使其落在 -11.25 ~ 11.25 之間
+            Dir(Dir >= 348.75) = Dir(Dir >= 348.75) - 360;
+            dir_edges = -11.25 : 22.5 : 348.75; % 17 個點構成 16 個區間
+            
+            % 3. 建立統計矩陣 (Rows: Beaufort 0~17 + Total, Cols: 16 Dir + Total)
+            num_b = length(b_levels);
+            num_d = length(directions_str);
+            count_table = zeros(num_b + 1, num_d + 1);
+            
+            % 4. 開始統計 (建議使用邏輯索引，效率較高)
+            for r = 1:num_b
+                target_b = b_levels(r);
+                for c = 1:num_d
+                    % 找出符合該級數且在該方向區間內的資料
+                    idx = (Beaufort_scale == target_b) & ...
+                          (Dir > dir_edges(c)) & (Dir <= dir_edges(c+1));
+                    count_table(r, c) = sum(idx);
+                end
+            end
+            
+            % 5. 計算邊際總和 (Marginal Sums)
+            count_table(1:num_b, end) = sum(count_table(1:num_b, 1:num_d), 2); % 每列總和
+            count_table(end, 1:num_d) = sum(count_table(1:num_b, 1:num_d), 1); % 每行總和
+            total_samples = sum(count_table(1:num_b, end));
+            count_table(end, end) = total_samples;
+            
+            % 6. 轉為百分比 (%)
+            if total_samples > 0
+                percent_table = (count_table ./ total_samples) * 100;
+            else
+                percent_table = count_table;
+            end
+            
+            % 7. 寫入檔案
+            fid = fopen(file_path, "w", "n", "UTF-8");
+            if fid == -1, uialert(app.UIFigure, "Cannot open file!", "Error"); end
+            fwrite(fid, [239 187 191], 'uint8');      % 加入這一行寫入 BOM
+            
+            % 寫入標題 (補上一個空白對齊 Beaufort 欄位)
+            fprintf(fid, "%s", "Bft/Dir");
+            fprintf(fid, ",%s", directions_str);
+            fprintf(fid, ",%s\n", "Total(%)");
+            
+            % 寫入各級數資料
+            for r = 1:num_b + 1
+                if r <= num_b
+                    row_label = sprintf("%d", b_levels(r));
+                else
+                    row_label = "Total(%)";
+                end
+                
+                fprintf(fid, "%s", row_label);
+                % 寫入該列所有的百分比
+                fprintf(fid, ",%.1f", percent_table(r, :));
+                fprintf(fid, "\n");
+            end
+            
+            fclose(fid);
+            % fprintf("統計完成，存檔至: %s\n", file_path);
+            
+        end
+end
+    
+
+    % Callbacks that handle component events
+    methods (Access = private)
+
+        % Value changed function: ItemtypeDropDown
+        function ItemtypeDropDownValueChanged(app, event)
+            % value = app.ItemtypeDropDown.Value;
+            value = string(app.ItemtypeDropDown.Value);
+            
+            switch value
+                case "AWAC & AQP: Current"
+                    app.InputItem = "curr";
+
+                case "AWAC & AQP: Wave(21 columns)"
+                    app.InputItem = "wave_21";
+
+                case "AWAC & AQP: Wave(15 columns)"
+                    app.InputItem = "wave_15";
+                
+                case "AWAC & AQP: Wave(18 columns)"
+                    app.InputItem = "wave_18";
+
+                case "AWAC & AQP: Wave(31 columns)"
+                    app.InputItem = "wave_31";
+
+                case "AWAC: Current(Processed data)"
+                    app.InputItem = "curr_p";
+
+                case "AWAC: Wave(Processed data)"
+                    app.InputItem = "wave_p";
+        
+                % case "CWA buoy: Wind"
+                %     app.InputItem = "wind";
+            end
+        end
+
+        % Button pushed function: BrowseButton_2
+        function BrowseButton_2Pushed(app, event)
+            selPath = uigetdir('', 'Select output file folder...');
+
+            if isequal(selPath, 0)
+            % disp('Selecting canceled.');
+                figure(app.UIFigure); 
+                return;
+            else
+                % 4. 組合完整路徑
+                % fullPath = fullfile(filePath, fileName);
+                
+                % 5. 將路徑顯示在你的 Edit Field 中 (名稱應為 app.InputdataEditField)
+                app.OutputfolderEditField.Value = selPath;
+                app.output_folder = selPath;
+                figure(app.UIFigure); 
+                % app.Inputfile = selPath;
+                return;
+            end
+        end
+
+        % Button pushed function: BrowseButton
+        function BrowseButtonPushed(app, event)
+            % startPath = 'C:\Users\adm\Desktop'; 
+            % selPath = uigetdir(startPath, 'Select input file folder...');
+            selType = {'*.*',  'All Files(*)'; '*.csv', '.csv(Current)'; '*.wap', '.wap(Wave)'};
+            [filename, selPath, ~] = uigetfile(selType, 'Select input file folder...', "MultiSelect", "on", "");
+            % selPath = uigetdir('', 'Select input file folder...');
+            if isequal(selPath, 0)
+                figure(app.UIFigure); 
+                return;
+            else
+                app.InputdataEditField.Value = selPath;
+                app.input_folder = selPath;
+                if ischar(filename) 
+                    app.Inputfile = {filename}; % 單選變 {'file.txt'}
+                else
+                    app.Inputfile = filename;   % 多選本來就是 cell
+                end
+                
+                % --- 在這裡呼叫自動偵測 ---
+                app.autoDetectItemType(); 
+                
+                figure(app.UIFigure); 
+            end
+        end
+
+        % Button pushed function: StartOutputFileButton
+        function StartOutputFileButtonPushed(app, event)
+            try
+
+                if isempty(app.input_folder) || ~isfolder(app.input_folder)
+                    uialert(app.UIFigure, 'Empty input path!', 'Error')
+                    return;
+                end
+    
+                if isempty(app.OutputfolderEditField.Value) || ~isfolder(app.OutputfolderEditField.Value)
+                    uialert(app.UIFigure, 'Empty output path!', 'Error')
+                    return;
+                end
+    
+                if app.InputItem == ""
+                    % 手動觸發一次對應邏輯，或者直接從下拉選單判斷
+                    ItemtypeDropDownValueChanged(app, event); 
+                end
+    
+                selectedFiles = app.Inputfile;
+                if ischar(selectedFiles)
+                    selectedFiles = {selectedFiles};
+                end
+    
+                % 1. 建立進度條對話框
+                d = uiprogressdlg(app.UIFigure, 'Title', 'Processing...', ...
+                    'Message', 'Preparing...', 'Cancelable', 'on');
+                data = struct();
+                userCancelled = false;
+
+                if d.CancelRequested
+                    return;
+                end
+
+                switch app.InputItem
+                    case 'curr'
+                        % ============= Current =============
+                        data = struct();
+                        isCsv = endsWith(selectedFiles, '.csv', 'IgnoreCase', true);
+                        dd_csv = selectedFiles(isCsv);
+                        if isempty(dd_csv)
+                            uialert(app.UIFigure, "CANNOT find .csv file!", "File NOT found.")
+                            return
+                        end
+                        dd = dd_csv;
+                        numFiles = length(dd);
+                        data.curr = struct('ddatetime', [], 'dday', [], 'Cur', [], 'Dir', []);
+
+                        for ii = 1:length(dd)
+                            if d.CancelRequested
+                                userCancelled = true;
+                                break; % 跳出 for 迴圈
+                            end
+
+                            df = readtable(fullfile(app.input_folder, app.Inputfile{ii}), 'ReadVariableNames', false, 'Delimiter', ';');
+                            % df = readmatrix(fullfile(app.main_folder, app.Inputfile{ii}), 'Delimiter', ' ');
+                            if isempty(app.StartLine)
+                                app.lowest_SL = mean(df.Var6, "omitmissing") - mean(diff(df.Var6));
+                                ig = find(df.Var6 >= app.lowest_SL);
+                            else
+                                ig = app.StartLine:length(df);
+                            end
+                            
+
+                            if numFiles >= 2
+                                data.curr_sepa(ii).ddatetime = datetime(string(df.Var1(ig(1):ig(end))), 'Inputformat', 'yyyy/MM/dd HH:mm:ss');
+                                data.curr_sepa(ii).dday = datenum(data.curr_sepa(ii).ddatetime);
+                                data.curr_sepa(ii).Cur = table2array(df(ig(1):ig(end), 10:2:end));
+                                data.curr_sepa(ii).Dir = table2array(df(ig(1):ig(end), 11:2:end));
+                                data.curr.ddatetime = [data.curr.ddatetime; data.curr_sepa(ii).ddatetime];
+                                data.curr.dday = [data.curr.dday; datenum(data.curr_sepa(ii).ddatetime)];
+                                data.curr.Cur = [data.curr.Cur; data.curr_sepa(ii).Cur];
+                                data.curr.Dir = [data.curr.Dir; data.curr_sepa(ii).Dir];
+                            else
+                                data.curr.ddatetime = datetime(string(df.Var1(ig(1):ig(end))), 'Inputformat', 'yyyy/MM/dd HH:mm:ss');
+                                data.curr.dday = datenum(data.curr_sepa(ii).ddatetime);
+                                data.curr.Cur = table2array(df(ig(1):ig(end), 10:2:end));
+                                data.curr.Dir = table2array(df(ig(1):ig(end), 11:2:end));
+                            end
+
+                            d.Value = ii / numFiles; 
+                            d.Message = sprintf('Processing %d/%d file: %s', ii, numFiles, app.Inputfile{ii});
+
+                        end
+
+                        [data.curr.ddatetime, sort_idx] = sort(data.curr.ddatetime, "ascend");
+                        data.curr.dday = data.curr.dday(sort_idx);
+                        data.curr.Cur = data.curr.Cur(sort_idx);
+                        data.curr.Dir = data.curr.Dir(sort_idx);
+
+                        close(d);
+                        if userCancelled
+                            uialert(app.UIFigure, 'Process cancelled by user.', 'Cancelled');
+                            return; % 直接結束 StartButtonPushed 函式
+                        end
+
+                    case 'wave_21'
+                        % ============= Wave =============
+                        data = struct();
+                        isWAP = endsWith(selectedFiles, '.wap', 'IgnoreCase', true);
+                        dd_wap = selectedFiles(isWAP);
+                        if isempty(dd_wap)
+                            uialert(app.UIFigure, "CANNOT find .wap file!", "File NOT found.")
+                            return
+                        end
+                        dd = dd_wap;
+                        numFiles = length(dd);
+                        var_names = {'Hs', 'H_3', 'H_10', 'H_max', ...
+                                'T_mean', 'Tp', 'Tz', ...
+                                'DirTp', 'Spr1', 'MDir', 'Unidex', 'MeanPr', ...
+                                'Velocity', 'Vmdir', 'Error'};
+                        all_fields = [{'ddatetime', 'dday'}, var_names];
+                        var_values = zeros(size(var_names)+[0, 2]);
+                        data.wave_murged = cell2struct(all_fields, var_values, 2);
+                        for ii = 1:length(dd)
+                            if d.CancelRequested
+                                userCancelled = true;
+                                break; % 跳出 for 迴圈
+                            end
+                            df = load(fullfile(app.input_folder, app.Inputfile{ii}), "Delimiter", " ");
+                            % df = readmatrix(fullfile(app.main_folder, app.Inputfile{ii}), 'Delimiter', ' ');
+                            % data.wave(ii).ddatetime = datetime(string(df.Var2), 'Inputformat', 'yyyyMMddHHmm');
+                            data.wave(ii).ddatetime = datetime(df(:, 3), df(:, 1), df(:, 2), df(:, 4), df(:, 5), 01);
+                            data.wave(ii).dday = datenum(data.wave(ii).ddatetime);
+
+                            if width(df) ~= 21
+                                uialert(app.UIFigure, 'Columns of .wap file are NOT equal 21!', 'Cancelled');
+                                break
+                            end
+
+                            for cc = 7:length(var_names)+6
+                                data.wave(ii).([var_names{cc-6}]) = df(:, cc);
+                            end
+                            d.Value = ii / numFiles; 
+                            d.Message = sprintf('Processing %d/%d file: %s', ii, numFiles, app.Inputfile{ii});
+                        end
+
+                        close(d);
+                        if userCancelled
+                            uialert(app.UIFigure, 'Process cancelled by user.', 'Cancelled');
+                            return; % 直接結束 StartButtonPushed 函式
+                        end
+
+                    case 'curr_p'
+                        % ============= Current =============
+                        data = struct();
+                        isXlsx = endsWith(selectedFiles, '.xlsx', 'IgnoreCase', true);
+                        dd_xlsx = selectedFiles(isXlsx);
+                        if isempty(dd_xlsx)
+                            uialert(app.UIFigure, "CANNOT find .xlsx file!", "File NOT found.")
+                            return
+                        end
+
+                        dd = dd_xlsx;
+                        numFiles = length(dd);
+                        data.curr = struct('ddatetime', [], 'dday', [], 'Cur', [], 'Dir', []);
+
+                        for ii = 1:length(dd)
+                            
+                            if d.CancelRequested
+                                userCancelled = true;
+                                break; % 跳出 for 迴圈
+                            end
+
+                            df = readtable(fullfile(app.input_folder, app.Inputfile{ii}), "VariableNamingRule", "preserve");
+                            
+                                data.curr.ddatetime = datetime(string(df.yyyymmddhhmi), "inputformat", "yyyyMMddHHmm");
+                                data.curr.dday = datenum(data.curr.ddatetime);
+                                data.curr.Cur = df.V/1000;
+                                data.curr.Dir = df.D;
+
+                            d.Value = ii / numFiles; 
+                            d.Message = sprintf('Processing %d/%d file: %s', ii, numFiles, app.Inputfile{ii});
+
+                        end
+
+                        [data.curr.ddatetime, sort_idx] = sort(data.curr.ddatetime, "ascend");
+                        data.curr.dday = data.curr.dday(sort_idx);
+                        data.curr.Cur = data.curr.Cur(sort_idx);
+                        data.curr.Dir = data.curr.Dir(sort_idx);
+
+                        close(d);
+                        if userCancelled
+                            uialert(app.UIFigure, 'Process cancelled by user.', 'Cancelled');
+                            return; % 直接結束 StartButtonPushed 函式
+                        end
+
+
+                    case 'wave_p'
+                        % ============= Current =============
+                        data = struct();
+                        isXlsx = endsWith(selectedFiles, '.xlsx', 'IgnoreCase', true);
+                        dd_xlsx = selectedFiles(isXlsx);
+                        if isempty(dd_xlsx)
+                            uialert(app.UIFigure, "CANNOT find .xlsx file!", "File NOT found.")
+                            return
+                        end
+
+                        dd = dd_xlsx;
+                        numFiles = length(dd);
+                        data.wave = struct('ddatetime', [], 'dday', [], 'Hs', [], 'Dir', [], 'Tp', [], 'Tmean', []);
+
+                        for ii = 1:length(dd)
+                            
+                            if d.CancelRequested
+                                userCancelled = true;
+                                break; % 跳出 for 迴圈
+                            end
+
+                            df = readtable(fullfile(app.input_folder, app.Inputfile{ii}), "VariableNamingRule", "preserve");
+                            
+                                data.wave.ddatetime = datetime(string(df.yyyymmddhhmi), "inputformat", "yyyyMMddHHmm");
+                                data.wave.dday = datenum(data.wave.ddatetime);
+                                data.wave.Hs = df.H/100;
+                                data.wave.Dir = df.D;
+                                data.wave.Tp = df.T/10;
+                                data.wave.Tmean = df.Tmean/10;
+
+                            d.Value = ii / numFiles; 
+                            d.Message = sprintf('Processing %d/%d file: %s', ii, numFiles, app.Inputfile{ii});
+
+                        end
+
+                        [data.wave.ddatetime, sort_idx] = sort(data.wave.ddatetime, "ascend");
+                        data.wave.dday = data.wave.dday(sort_idx);
+                        data.wave.Hs = data.wave.Hs(sort_idx);
+                        data.wave.Dir = data.wave.Dir(sort_idx);
+
+                        close(d);
+                        if userCancelled
+                            uialert(app.UIFigure, 'Process cancelled by user.', 'Cancelled');
+                            return; % 直接結束 StartButtonPushed 函式
+                        end
+
+                    % case 'wind'
+                    %     % ============= Wind =============
+                    % 
+                    %     for ii = 1:length(dd)
+                    %         if d.CancelRequested
+                    %             userCancelled = true;
+                    %             break; % 跳出 for 迴圈
+                    %         end
+                    %         df = readtable(fullfile(app.input_folder, app.Inputfile{ii}), "ReadVariableNames", false);
+                    %         data.wind(ii).ddatetime = datetime(string(df.Var2), 'Inputformat', 'yyyyMMddHHmm');
+                    %         data.wind(ii).dday = datenum(data.wind(ii).ddatetime);
+                    %         data.wind(ii).WSm = df.Var3;
+                    %         data.wind(ii).Dirm = df.Var4;
+                    %         data.wind(ii).WSmax = df.Var5;
+                    %         data.wind(ii).Beaufort_scale = df.Var6;
+                    %         data.wind(ii).Beaufort_scale_max = df.Var7;
+                    % 
+                    %         d.Value = ii / numFiles; 
+                    %         d.Message = sprintf('Processing %d/%d file: %s', ii, numFiles, app.Inputfile{ii});
+                    %     end
+                    % 
+                    %     close(d);
+                    %     if userCancelled
+                    %         uialert(app.UIFigure, 'Process cancelled by user.', 'Cancelled');
+                    %         return; % 直接結束 StartButtonPushed 函式
+                    %     end
+                    % 
+                    
+
+                    
+
+                    % case 'pres'
+                    %     % ============= Pressure =============
+                    % 
+                    %     for ii = 1:length(dd)
+                    %         if d.CancelRequested
+                    %             userCancelled = true;
+                    %             break; % 跳出 for 迴圈
+                    %         end
+                    %         df = readtable(fullfile(app.input_folder, app.Inputfile{ii}), 'ReadVariableNames', false);
+                    %         % df = readmatrix(fullfile(app.main_folder, app.Inputfile{ii}), 'Delimiter', ' ');
+                    %         data.pres(ii).ddatetime = datetime(string(df.Var2), 'Inputformat', 'yyyyMMddHHmm');
+                    %         data.pres(ii).dday = datenum(data.pres(ii).ddatetime);
+                    %         data.pres(ii).pres = df.Var3;
+                    %         d.Value = ii / numFiles; 
+                    %         d.Message = sprintf('Processing %d/%d file: %s', ii, numFiles, app.Inputfile{ii});
+                    %     end
+                    % 
+                    %     close(d);
+                    %     if userCancelled
+                    %         uialert(app.UIFigure, 'Process cancelled by user.', 'Cancelled');
+                    %         return; % 直接結束 StartButtonPushed 函式
+                    %     end
+
+                end
+                
+
+            % end
+
+
+            app.ProcessedData = data;
+            % d = [];    % 進度條
+            % fid = -1;  % 檔案控制碼
+
+            if app.matCheckBox.Value
+                outputpath = string(app.OutputfolderEditField.Value);
+                inputitem = string(app.InputItem);
+                station = app.stationname;
+                fileName = "ProcessedData_" + station + "_" + inputitem + ".mat";
+                save(fullfile(outputpath, fileName), '-struct', 'data')
+                uialert(app.UIFigure, "Saved in: " + newline + fullfile(outputpath, fileName), 'Success!');
+            end
+
+            if app.txtCheckBox.Value
+
+                d = uiprogressdlg(app.UIFigure, 'Title', 'Processing...', ...
+                        'Message', 'Preparing...', 'Cancelable', 'on');
+                userCancelled = false;
+                if d.CancelRequested
+                    return;
+                end
+
+                outputpath = string(app.OutputfolderEditField.Value);
+                inputitem = string(app.InputItem);
+                station = app.stationname;
+                fileName = "ProcessedData_" + station + "_" + inputitem + ".txt";
+                % uialert(app.UIFigure, "Saving " + fileName + "...", "Saving data...");
+                fid = fopen(fullfile(outputpath, fileName), 'w');
+                switch app.InputItem
+                        case 'temp'
+                            fprintf(fid, "YYYYMMDDhhmm, Temp.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).temp)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s, %5.1f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), data.([app.InputItem])(ii).temp(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .txt file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'stemp'
+                            fprintf(fid, "YYYYMMDDhhmm, sTemp.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).stemp)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s, %6.1f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), data.([app.InputItem])(ii).stemp(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .txt file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 't_stemp'
+                            fprintf(fid, "YYYYMMDDhhmm, sTemp.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).stemp)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s, %6.1f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), data.([app.InputItem])(ii).stemp(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .txt file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'tide'
+                            fprintf(fid, "YYYYMMDDhhmm,   SL.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).dday)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s, %6.3f\n", datestr(data.([app.InputItem])(ii).dday(jj), 'yyyymmddHHMM'), data.([app.InputItem])(ii).SL(jj)/1000);
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .txt file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'curr'
+                            fprintf(fid, "YYYYMMDDhhmm,  Vel.,  Dir.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).Cur)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s, %5.2f, %5.1f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), ...
+                                        data.([app.InputItem])(ii).Cur(jj), data.([app.InputItem])(ii).Dir(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .txt file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'pres'
+                            fprintf(fid, "YYYYMMDDhhmm,  Pres.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).pres)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s, %5.1f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), ...
+                                        data.([app.InputItem])(ii).pres(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .txt file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'wave'
+                            fprintf(fid, "YYYYMMDDhhmm,    H,    T, Tmean, Dir.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).H)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s, %4.2f, %4.1f, %5.1f, %5.1f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), ...
+                                        data.([app.InputItem])(ii).H(jj), ...
+                                        data.([app.InputItem])(ii).T(jj), ...
+                                        data.([app.InputItem])(ii).Tmean(jj), ...
+                                        data.([app.InputItem])(ii).Dir(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .txt file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'wind'
+
+                            fprintf(fid, "YYYYMMDDhhmm,  WSm,  Dirm, WSmax, BFscale, BFscale_max\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).dday)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s, %4.1f, %5.0f, %5.1f, %7.0f, %11.0f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), ...
+                                        data.([app.InputItem])(ii).WSm(jj), ...
+                                        data.([app.InputItem])(ii).Dirm(jj), ...
+                                        data.([app.InputItem])(ii).WSmax(jj), ...
+                                        data.([app.InputItem])(ii).Beaufort_scale(jj), ...
+                                        data.([app.InputItem])(ii).Beaufort_scale_max(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .txt file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+
+                        case 'wave_p'
+                            pp = erase(app.InputItem, "_p");
+                            fprintf(fid, "YYYYMMDDhhmm,    H,    T, Tmean, Dir.\n");
+                            for ii = 1:length(data.((pp)))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.((pp))(ii).Hs)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s, %4.2f, %4.1f, %5.1f, %5.1f\n", datestr(data.((pp))(ii).ddatetime(jj), 'yyyymmddHHMM'), ...
+                                        data.((pp))(ii).Hs(jj), ...
+                                        data.((pp))(ii).Tp(jj), ...
+                                        data.((pp))(ii).Tmean(jj), ...
+                                        data.((pp))(ii).Dir(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .txt file %d/%d file: %s', ii, numFiles, datestr(data.((pp))(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'curr_p'
+                            fprintf(fid, "YYYYMMDDhhmm,  Vel.,  Dir.\n");
+                            pp = erase(app.InputItem, "_p");
+                            for ii = 1:length(data.((pp)))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.((pp))(ii).Cur)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s, %5.2f, %5.1f\n", datestr(data.((pp))(ii).ddatetime(jj), 'yyyymmddHHMM'), ...
+                                        data.((pp))(ii).Cur(jj), data.((pp))(ii).Dir(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .txt file %d/%d file: %s', ii, numFiles, datestr(data.((pp))(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                end
+                % save(fullfile(outputpath, fileName), '-struct', 'data')
+                % uiclose(uu);
+                uialert(app.UIFigure, "Saved in: " + newline + fullfile(outputpath, fileName), 'Success!');
+            end
+
+
+            if app.csvCheckBox.Value
+                d = uiprogressdlg(app.UIFigure, 'Title', 'Processing...', ...
+                        'Message', 'Preparing...', 'Cancelable', 'on');
+                userCancelled = false;
+                if d.CancelRequested
+                    return;
+                end
+                outputpath = string(app.OutputfolderEditField.Value);
+                inputitem = string(app.InputItem);
+                station = app.stationname;
+                fileName = "ProcessedData_" + station + "_" + inputitem + ".csv";
+                % uialert(app.UIFigure, "Saving " + fileName + "...", "Saving data...");
+                fid = fopen(fullfile(outputpath, fileName), 'w');
+                switch app.InputItem
+                        case 'temp'
+                            fprintf(fid, "YYYYMMDDhhmm,Temp.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).temp)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s,%5.1f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), data.([app.InputItem])(ii).temp(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .csv file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'stemp'
+                            fprintf(fid, "YYYYMMDDhhmm,sTemp.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).stemp)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s,%6.1f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), data.([app.InputItem])(ii).stemp(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .csv file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 't_stemp'
+                            fprintf(fid, "YYYYMMDDhhmm,sTemp.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).stemp)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s,%6.1f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), data.([app.InputItem])(ii).stemp(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .csv file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'tide'
+                            rowCounter = 0;
+                            filePart = 2;
+                            fprintf(fid, "YYYYMMDDhhmm,SL.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).dday)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    rowCounter = rowCounter +1;
+
+                                    if rowCounter >= 900000
+                                        fclose(fid);
+                                        fid = fopen(fullfile(outputpath, "ProcessedData_" + station + "_" + inputitem + "_Part" + filePart + ".csv"), 'w');
+                                        fprintf(fid, "YYYYMMDDhhmm, SL.\n"); % 新檔也要寫標題
+                                        rowCounter = 1;
+                                        filePart = filePart +1;
+                                    end
+
+                                    fprintf(fid, "%+12s,%6.3f\n", datestr(data.([app.InputItem])(ii).dday(jj), 'yyyymmddHHMM'), data.([app.InputItem])(ii).SL(jj)/1000);
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .csv file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).dday(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'curr'
+                            fprintf(fid, "YYYYMMDDhhmm,Vel.,Dir.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).Cur)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s,%5.2f,%5.1f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), ...
+                                        data.([app.InputItem])(ii).Cur(jj), data.([app.InputItem])(ii).Dir(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .csv file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'pres'
+                            fprintf(fid, "YYYYMMDDhhmm,Pres.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).pres)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s,%5.1f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), ...
+                                        data.([app.InputItem])(ii).pres(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .csv file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'wave'
+                            fprintf(fid, "YYYYMMDDhhmm,H,T,Tmean,Dir.\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).H)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s,%4.2f,%4.1f,%5.1f,%5.1f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), ...
+                                        data.([app.InputItem])(ii).H(jj), ...
+                                        data.([app.InputItem])(ii).T(jj), ...
+                                        data.([app.InputItem])(ii).Tmean(jj), ...
+                                        data.([app.InputItem])(ii).Dir(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .csv file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'wind'
+                            fprintf(fid, "YYYYMMDDhhmm,WSm,Dirm,WSmax,BFscale,BFscale_max\n");
+                            for ii = 1:length(data.([app.InputItem]))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.([app.InputItem])(ii).dday)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s,%4.1f,%5.0f,%5.1f,%7.0f,%11.0f\n", datestr(data.([app.InputItem])(ii).ddatetime(jj), 'yyyymmddHHMM'), ...
+                                        data.([app.InputItem])(ii).WSm(jj), ...
+                                        data.([app.InputItem])(ii).Dirm(jj), ...
+                                        data.([app.InputItem])(ii).WSmax(jj), ...
+                                        data.([app.InputItem])(ii).Beaufort_scale(jj), ...
+                                        data.([app.InputItem])(ii).Beaufort_scale_max(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .csv file %d/%d file: %s', ii, numFiles, datestr(data.([app.InputItem])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'wave_p'
+                            fprintf(fid, "YYYYMMDDhhmm,H,T,Tmean,Dir.\n");
+                            pp = erase(app.InputItem, "_p");
+                            for ii = 1:length(data.((pp)))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.((pp))(ii).Hs)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s,%4.2f,%4.1f,%5.1f,%5.1f\n", datestr(data.((pp))(ii).ddatetime(jj), 'yyyymmddHHMM'), ...
+                                        data.((pp))(ii).Hs(jj), ...
+                                        data.((pp))(ii).Tp(jj), ...
+                                        data.((pp))(ii).Tmean(jj), ...
+                                        data.((pp))(ii).Dir(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .csv file %d/%d file: %s', ii, numFiles, datestr(data.([pp])(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+
+                        case 'curr_p'
+                            fprintf(fid, "YYYYMMDDhhmm,Vel.,Dir.\n");
+                            pp = erase(app.InputItem, "_p");
+                            for ii = 1:length(data.((pp)))
+                                if d.CancelRequested, userCancelled = true; break; end
+                                for jj = 1:length(data.((pp))(ii).Cur)
+                                    if d.CancelRequested, userCancelled = true; break; end
+                                    fprintf(fid, "%+12s,%5.2f,%5.1f\n", datestr(data.((pp))(ii).ddatetime(jj), 'yyyymmddHHMM'), ...
+                                        data.((pp))(ii).Cur(jj), data.((pp))(ii).Dir(jj));
+                                end
+                                d.Value = ii / numFiles; 
+                                d.Message = sprintf('Saving .csv file %d/%d file: %s', ii, numFiles, datestr(data.((pp))(ii).ddatetime(1), 'yyyy'));
+                            end
+
+                            close(d);
+                            if userCancelled
+                                uialert(app.UIFigure, 'Saving cancelled by user.', 'Cancelled');
+                                return; % 直接結束 StartButtonPushed 函式
+                            end
+                end
+                % save(fullfile(outputpath, fileName), '-struct', 'data')
+                % uiclose(uu);
+                uialert(app.UIFigure, "Saved in: " + newline + fullfile(outputpath, fileName), 'Success!');
+            end
+
+            catch ME
+                errorMessage = sprintf('Coding error! \n\nReason: %s\n\nLocation:%s (Line: %d)', ...
+                ME.message, ME.stack(1).name, ME.stack(1).line);
+                
+                uialert(app.UIFigure, errorMessage, 'System error', 'Icon', 'error');
+            end
+        end
+
+        % Value changed function: StartRow0AutoEditField
+        function StartRow0AutoEditFieldValueChanged(app, event)
+            value = app.StartRow0AutoEditField.Value;
+            if value == 0
+                % app.lowest_SL = [];
+                app.StartLine = [];
+            else 
+                % app.lowest_SL = value;
+                app.StartLine = value;
+            end
+        end
+
+        % Value changed function: StationnameEditField
+        function StationnameEditFieldValueChanged(app, event)
+            value = app.StationnameEditField.Value;
+            app.stationname = string(value);
+        end
+
+        % Button pushed function: BrowseButton_3
+        function BrowseButton_3Pushed(app, event)
+            
+            [filename, filefolder, ~] = uigetfile({"*.mat", "mat"}, "Select a .mat file...",  "MultiSelect", "off");
+            % app.InputdataEditField_2.Value = fullfile(filefolder, filename);
+
+            if isequal(filefolder, 0)
+                figure(app.UIFigure); 
+                return;
+            else
+                app.SelectfileEditField.Value = fullfile(filefolder, filename);
+                app.input_folder_2 = filefolder;
+                app.Inputfile_2 = filename;
+                
+                % --- 在這裡呼叫自動偵測 ---
+                app.autoDetectItemType(); 
+                
+                figure(app.UIFigure); 
+            end
+
+        end
+
+        % Button pushed function: BrowseButton_4
+        function BrowseButton_4Pushed(app, event)
+            selPath = uigetdir('', 'Select output file folder...');
+
+             if isequal(selPath, 0)
+                % disp('Selecting canceled.');
+                figure(app.UIFigure); 
+                return;
+             else
+                % 4. 組合完整路徑
+                % fullPath = fullfile(filePath, fileName);
+                
+                % 5. 將路徑顯示在你的 Edit Field 中 (名稱應為 app.InputdataEditField)
+                app.OutputfolderEditField_2.Value = selPath;
+                app.output_folder = selPath;
+                figure(app.UIFigure); 
+                % app.Inputfile = selPath;
+                return;
+             end
+        end
+
+        % Value changed function: Test1TimeGapTestCheckBox
+        function Test1TimeGapTestCheckBoxValueChanged(app, event)
+            value = app.Test1TimeGapTestCheckBox.Value;
+            if value
+                app.QC_switch.Test1 = "on";
+            else
+                app.QC_switch.Test1 = "off";
+            end
+        end
+
+        % Value changed function: Test4GrossTestCheckBox
+        function Test4GrossTestCheckBoxValueChanged(app, event)
+            value = app.Test4GrossTestCheckBox.Value;
+            if value
+                app.QC_switch.Test4 = "on";
+            else
+                app.QC_switch.Test4 = "off";
+            end
+        end
+
+        % Value changed function: Test5ClimatologyTestCheckBox
+        function Test5ClimatologyTestCheckBoxValueChanged(app, event)
+            value = app.Test5ClimatologyTestCheckBox.Value;
+            if value
+                app.QC_switch.Test5 = "on";
+            else
+                app.QC_switch.Test5 = "off";
+            end
+        end
+
+        % Value changed function: Test6SpikeTestCheckBox
+        function Test6SpikeTestCheckBoxValueChanged(app, event)
+            value = app.Test6SpikeTestCheckBox.Value;
+            if value
+                app.QC_switch.Test6 = "on";
+            else
+                app.QC_switch.Test6 = "off";
+            end
+        end
+
+        % Value changed function: Test7RateofChangeTestCheckBox
+        function Test7RateofChangeTestCheckBoxValueChanged(app, event)
+            value = app.Test7RateofChangeTestCheckBox.Value;
+            if value
+                app.QC_switch.Test7 = "on";
+            else
+                app.QC_switch.Test7 = "off";
+            end
+        end
+
+        % Value changed function: Test8FlatLineTestCheckBox
+        function Test8FlatLineTestCheckBoxValueChanged(app, event)
+            value = app.Test8FlatLineTestCheckBox.Value;
+            if value
+                app.QC_switch.Test8 = "on";
+            else
+                app.QC_switch.Test8 = "off";
+            end
+        end
+
+        % Value changed function: Test10AttenuatedSignalTestCheckBox
+        function Test10AttenuatedSignalTestCheckBoxValueChanged(app, event)
+            value = app.Test10AttenuatedSignalTestCheckBox.Value;
+            if value
+                app.QC_switch.Test10 = "on";
+            else
+                app.QC_switch.Test10 = "off";
+            end
+        end
+
+        % Value changed function: QCItemDropDown
+        function QCItemDropDownValueChanged(app, event)
+            value = string(app.QCItemDropDown.Value);
+            % value = string(app.ItemtypeDropDown.Value);
+            
+            switch value
+                case "Wave (Hs, Tp, Tmean, Dir)"
+                    app.QCItem = "wave";
+
+                case "Current (Vel, Dir)"
+                    app.QCItem = "curr";
+
+                case "Sea Level"
+                    app.QCItem = "sl";
+            end
+            
+        end
+
+        % Button pushed function: StartQCButton
+        function StartQCButtonPushed(app, event)
+            try
+
+                if isempty(app.input_folder_2) || ~isfolder(app.input_folder_2)
+                    uialert(app.UIFigure, 'Empty input path!', 'Error')
+                    return;
+                end
+    
+                if isempty(app.OutputfolderEditField_2.Value) || ~isfolder(app.OutputfolderEditField_2.Value)
+                    uialert(app.UIFigure, 'Empty output path!', 'Error')
+                    return;
+                end
+                
+                selectedFile = app.SelectfileEditField.Value;
+    
+                % 1. 建立進度條對話框
+                d = uiprogressdlg(app.UIFigure, 'Title', 'Processing...', ...
+                    'Message', 'Preparing...', 'Cancelable', 'on');
+                data = struct();
+                userCancelled = false;
+
+                if d.CancelRequested
+                    return;
+                end
+
+                % app.QCItem = app.QCItemDropDown.Value;
+                value = string(app.QCItemDropDown.Value);
+                    % value = string(app.ItemtypeDropDown.Value);
+                    
+                switch value
+                    case "Wave (Hs, Tp, Tmean, Dir)"
+                        app.QCItem = "wave";
+    
+                    case "Current (Vel, Dir)"
+                        app.QCItem = "curr";
+    
+                    case "Sea Level"
+                        app.QCItem = "sl";
+                end
+
+                switch app.QCItem
+                    case 'curr'
+                        data.curr = struct();
+                        
+                        df = load(selectedFile);
+                        if fieldnames(df) ~= app.QCItem
+                            alert_str = sprintf("Selected wrong QC Item!\nSuggest Select QC item: %s.", string(fieldnames(df)));
+                            uialert(app.UIFigure, alert_str, "Error"); 
+                            return; 
+                        end
+                        filenames = fieldnames(df.((app.QCItem)));
+                        keep_items = {'ddatetime', 'Cur', 'Dir'};
+                        filenames_keep = filenames(matches(filenames, keep_items));
+                        curr = struct();
+                       
+                        for ii = 1:length(df.((app.QCItem)))
+                            % ff_name = filenames_keep{ii};
+                            % 1. 先保留原始未補齊的時間序列
+                            raw_time = df.curr(ii).ddatetime;
+                            
+                            % 2. 分別將 Cur 和 Dir 對齊到補齊後的完整網格
+                            [new_time, curr(ii).Cur] = find_missing_data(raw_time, df.curr(ii).Cur);
+                            [~,        curr(ii).Dir] = find_missing_data(raw_time, df.curr(ii).Dir);
+                            
+                            % 3. 最後再將 ddatetime 更新為補齊後的完整時間序列
+                            curr(ii).ddatetime = new_time;
+                        end
+
+                        for ii = 1:length(curr)
+                            if d.CancelRequested, userCancelled = true; break; end
+                            d.Value = ii / length(curr); 
+                            d.Message = sprintf('QC %d/%d file: %s', ii, length(curr), datestr(curr(ii).ddatetime(1), 'yyyy'));
+                            if app.sr == 0
+                                app.sr = mode(diff(curr(ii).ddatetime));
+                                app.sr = hours(app.sr);
+                            end
+                            data.curr(ii).ddatetime = curr(ii).ddatetime;
+                            opts_cell = namedargs2cell(app.QC_switch);
+                            [Cur_flags, f] = QC_TEST(curr(ii).ddatetime, curr(ii).Cur, app.sr, app.CU_QCsettings, opts_cell{:});
+                            data.curr(ii).Cur = curr(ii).Cur;
+                            data.curr(ii).Cur(f >= 4) = NaN;
+                            data.curr(ii).Cur_flags = Cur_flags;
+    
+                            % [Dir_flags, f] = QC_TEST(ddatetime, Dir, sr, CD_QCsettings, opts_cell{:});
+                            [Dir_flags, f] = QC_TEST(curr(ii).ddatetime, curr(ii).Dir, app.sr, app.CD_QCsettings, "Test1", "on", "Test4", "on", "Test5", "on", ...
+                                "Test6", "off", "Test7", "off", "Test8", "off", "Test10", "off");
+                            data.curr(ii).Dir = curr(ii).Dir;
+                            data.curr(ii).Dir(f >= 4) = NaN;
+                            data.curr(ii).Dir_flags = Dir_flags;
+                        end
+
+                    case 'wave'
+                        data.wave = struct();
+
+                        df = load(selectedFile);
+                        if fieldnames(df) ~= app.QCItem
+                            alert_str = sprintf("Selected wrong QC Item!\nSuggest Select QC item: %s.", string(fieldnames(df)));
+                            uialert(app.UIFigure, alert_str, "Error"); 
+                            return; 
+                        end
+                        filenames = fieldnames(df.((app.QCItem)));
+                        keep_items = {'ddatetime', 'Hs', 'Tmean', 'Tp', 'Dir'};
+                        filenames_keep = filenames(matches(filenames, keep_items));
+                        wave = struct();
+                        % sr = app.sr;
+                       
+                        for ii = 1:length(df.((app.QCItem)))
+                        % for ii = 1
+                            % ff_name = filenames_keep{ii};
+                            % 1. 先保留原始未補齊的時間序列
+                            raw_time = df.wave(ii).ddatetime;
+
+                            if app.sr == 0
+                                app.sr = mode(diff(df.wave(ii).ddatetime));
+                                app.sr = hours(app.sr);
+                            else
+                                app.sr = hours(app.sr);
+                            end
+                            
+                            % 2. 分別將 Cur 和 Dir 對齊到補齊後的完整網格
+                            [new_time, wave(ii).Hs] = find_missing_data(raw_time, df.wave(ii).Hs, app.sr);
+                            [~,        wave(ii).Tmean] = find_missing_data(raw_time, df.wave(ii).Tmean, app.sr);
+                            [~,        wave(ii).Tp] = find_missing_data(raw_time, df.wave(ii).Tp, app.sr);
+                            [~,        wave(ii).Dir] = find_missing_data(raw_time, df.wave(ii).Dir, app.sr);
+                            
+                            % 3. 最後再將 ddatetime 更新為補齊後的完整時間序列
+                            wave(ii).ddatetime = new_time;
+                            wave(ii).raw_time = raw_time;
+                        end
+
+                        opts_cell = namedargs2cell(app.QC_switch);
+
+                        for ii = 1:length(wave)
+
+                            if d.CancelRequested, userCancelled = true; break; end
+
+                            d.Value = ii / length(wave); 
+                            d.Message = sprintf('QC %d/%d file: %s', ii, length(wave), datestr(wave(ii).ddatetime(1), 'yyyy'));
+                            % sr = mode(diff(wave(ii).ddatetime));
+                            % sr = hours(sr);
+                            
+                            data.wave(ii).ddatetime = wave(ii).ddatetime;
+                            if app.sr == 0
+                                app.sr = mode(diff(wave(ii).ddatetime));
+                                app.sr = hours(app.sr);
+                            end
+                            
+
+                            [Hs_flags, f] = QC_TEST(wave(ii).ddatetime, wave(ii).Hs, app.sr, app.WV_QCsettings, opts_cell{:});
+                            data.wave(ii).Hs = wave(ii).Hs;
+                            data.wave(ii).Hs(f >= 4) = NaN;
+                            data.wave(ii).Hs_flags = Hs_flags;
+
+                            [Tmean_flags, f] = QC_TEST(wave(ii).ddatetime, wave(ii).Tmean, app.sr, app.TP_QCsettings, opts_cell{:});
+                            data.wave(ii).Tmean = wave(ii).Tmean;
+                            data.wave(ii).Tmean(f >= 4) = NaN;
+                            data.wave(ii).Tmean_flags = Tmean_flags;
+
+                            [Tp_flags, f] = QC_TEST(wave(ii).ddatetime, wave(ii).Tp, app.sr, app.TP_QCsettings, opts_cell{:});
+                            data.wave(ii).Tp = wave(ii).Tp;
+                            data.wave(ii).Tp(f >= 4) = NaN;
+                            data.wave(ii).Tp_flags = Tp_flags;
+    
+                            % [Dir_flags, f] = QC_TEST(ddatetime, Dir, sr, CD_QCsettings, opts_cell{:});
+                            [Dir_flags, f] = QC_TEST(wave(ii).ddatetime, wave(ii).Dir, app.sr, app.WVD_QCsettings, "Test1", "on", "Test4", "on", "Test5", "on", ...
+                                "Test6", "off", "Test7", "off", "Test8", "off", "Test10", "off");
+                            data.wave(ii).Dir = wave(ii).Dir;
+                            data.wave(ii).Dir(f >= 4) = NaN;
+                            data.wave(ii).Dir_flags = Dir_flags;
+
+                            data.wave(ii).raw_time = wave(ii).raw_time;
+                            [data.wave(ii).Time_flags] = Test1(wave(ii).raw_time, app.sr, app.WV_QCsettings.t1_suspect, app.WV_QCsettings.t1_fail);
+
+                        end
+
+                end
+
+                close(d);
+                if userCancelled
+                    uialert(app.UIFigure, 'QC cancelled by user.', 'Cancelled');
+                    return; % 直接結束 StartButtonPushed 函式
+                end
+
+                if isempty(fieldnames(data))
+                    uialert(app.UIFigure, "Selected wrong QC item!", "Error");
+                    return;
+                else
+                    outputpath = string(app.OutputfolderEditField_2.Value);
+                    inputitem = string(app.QCItem);
+                    station = string(app.StationnameEditField_2.Value);
+                    % station = app.stationname;
+                    fileName = "QCedData_" + station + "_" + inputitem + ".mat";
+                    save(fullfile(outputpath, fileName), '-struct', 'data')
+                    uialert(app.UIFigure, "Saved in: " + newline + fullfile(outputpath, fileName), 'Success!');
+                end
+                
+                catch ME
+                    errorMessage = sprintf('Coding error! \n\nReason: %s\n\nLocation:%s (Line: %d)', ...
+                    ME.message, ME.stack(1).name, ME.stack(1).line);
+                    
+                    uialert(app.UIFigure, errorMessage, 'System error', 'Icon', 'error');
+            end
+        end
+
+        % Value changed function: SelectAllCheckBox
+        function SelectAllCheckBoxValueChanged(app, event)
+            value = app.SelectAllCheckBox.Value;
+    
+            % 1. 更新畫面上所有 CheckBox 狀態
+            app.Test1TimeGapTestCheckBox.Value = value;
+            app.Test2SyntaxTestCheckBox.Value = value;
+            app.Test3LocationTestCheckBox.Value = value;
+            app.Test4GrossTestCheckBox.Value = value;
+            app.Test5ClimatologyTestCheckBox.Value = value;
+            app.Test6SpikeTestCheckBox.Value = value;
+            app.Test7RateofChangeTestCheckBox.Value = value;
+            app.Test8FlatLineTestCheckBox.Value = value;
+            app.Test9MutiVariateTestCheckBox.Value = value;
+            app.Test10AttenuatedSignalTestCheckBox.Value = value;
+            app.Test11NeighborTestCheckBox.Value = value;
+        
+            % 2. 手動同步更新 app.QC_switch
+            if value
+                state = "on";
+            else
+                state = "off";
+            end
+        
+            all_tests = fieldnames(app.QC_switch);
+            for k = 1:length(all_tests)
+                app.QC_switch.(all_tests{k}) = state;
+            end
+        end
+
+        % Button pushed function: PropertiesButton
+        function PropertiesButtonPushed(app, event)
+            try
+                if app.QCItemDropDown.Value == "Current (Vel, Dir)"
+                    % 1. 打包主程式當前的設定（第一次打開若為空，就傳空值 []）
+                    if ~isempty(app.CU_QCsettings)
+                        currentSettings = app.CU_QCsettings;
+                    else
+                        currentSettings = []; % 第一次打開，讓子視窗使用預設值
+                    end
+            
+                    % 2. 關鍵！把當前設定傳進子視窗括號裡：
+                    settingsWin = Properties_QC_curr; 
+                    if ~isempty(currentSettings)
+                        settingsWin.loadSettings(currentSettings);
+                    end
+            
+                    % 3. 等待使用者按 Ok / Cancel
+                    uiwait(settingsWin.QCpropertiesCurrentUIFigure);
+            
+                    % 4. 判斷使用者是否按了 Ok
+                    if isvalid(settingsWin)
+                        if ~isempty(settingsWin.Results)
+                            % 拿到最新修改的設定值
+                            res = settingsWin.Results;
+                            app.sr = settingsWin.samplingrate;
+            
+                            % 存回主 App 的各個變數中
+                            app.CU_QCsettings = res;
+                            % app.sr = sr;
+            
+                            uialert(app.UIFigure, 'Updated properties!', 'Success');
+                        end
+                        
+                        % 不論按 Ok 還是 Cancel，等待結束後都把子視窗銷毀釋放記憶體
+                        delete(settingsWin); 
+                    end
+                end
+
+                if app.QCItemDropDown.Value == "Wave (Hs, Tp, Tmean, Dir)"
+                    % 1. 打包主程式當前的設定（第一次打開若為空，就傳空值 []）
+                    if ~isempty(app.WV_QCsettings)
+                        currentSettings = app.WV_QCsettings;
+                    else
+                        currentSettings = []; % 第一次打開，讓子視窗使用預設值
+                    end
+            
+                    % 2. 關鍵！把當前設定傳進子視窗括號裡：
+                    settingsWin = Properties_QC_wave; 
+                    if ~isempty(currentSettings)
+                        settingsWin.loadSettings(currentSettings);
+                    end
+            
+                    % 3. 等待使用者按 Ok / Cancel
+                    uiwait(settingsWin.QCpropertiesWaveUIFigure);
+            
+                    % 4. 判斷使用者是否按了 Ok
+                    if isvalid(settingsWin)
+                        if ~isempty(settingsWin.Results_WV) || ~isempty(settingsWin.Results_TP)
+                            % 拿到最新修改的設定值
+                            res_WV = settingsWin.Results_WV;
+                            res_TP = settingsWin.Results_TP;
+                            app.sr = settingsWin.samplingrate;
+            
+                            % 存回主 App 的各個變數中
+                            app.WV_QCsettings = res_WV;
+                            app.TP_QCsettings = res_TP;
+                            % app.sr = sr;
+            
+                            uialert(app.UIFigure, 'Updated properties!', 'Success');
+                        end
+                        
+                        % 不論按 Ok 還是 Cancel，等待結束後都把子視窗銷毀釋放記憶體
+                        delete(settingsWin); 
+                    end
+                end
+        
+            catch ME
+                errorMessage = sprintf('Coding error! \n\nReason: %s\n\nLocation:%s (Line: %d)', ...
+                    ME.message, ME.stack(end).name, ME.stack(end).line);
+                uialert(app.UIFigure, errorMessage, 'System error', 'Icon', 'error');
+            end
+        end
+    end
+
+    % Component initialization
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Create UIFigure and hide until all components are created
+            app.UIFigure = uifigure('Visible', 'off');
+            app.UIFigure.Position = [100 100 640 480];
+            app.UIFigure.Name = 'MATLAB App';
+
+            % Create QCInputPanel
+            app.QCInputPanel = uipanel(app.UIFigure);
+            app.QCInputPanel.Title = 'QC Input';
+            app.QCInputPanel.Position = [12 12 615 262];
+
+            % Create Test11NeighborTestCheckBox
+            app.Test11NeighborTestCheckBox = uicheckbox(app.QCInputPanel);
+            app.Test11NeighborTestCheckBox.Tag = 'Test11';
+            app.Test11NeighborTestCheckBox.Enable = 'off';
+            app.Test11NeighborTestCheckBox.Text = 'Test 11 - Neighbor Test';
+            app.Test11NeighborTestCheckBox.Position = [190 10 144 22];
+
+            % Create Test10AttenuatedSignalTestCheckBox
+            app.Test10AttenuatedSignalTestCheckBox = uicheckbox(app.QCInputPanel);
+            app.Test10AttenuatedSignalTestCheckBox.ValueChangedFcn = createCallbackFcn(app, @Test10AttenuatedSignalTestCheckBoxValueChanged, true);
+            app.Test10AttenuatedSignalTestCheckBox.Tag = 'Test10';
+            app.Test10AttenuatedSignalTestCheckBox.Text = 'Test 10 - Attenuated Signal Test';
+            app.Test10AttenuatedSignalTestCheckBox.Position = [190 30 192 22];
+
+            % Create Test9MutiVariateTestCheckBox
+            app.Test9MutiVariateTestCheckBox = uicheckbox(app.QCInputPanel);
+            app.Test9MutiVariateTestCheckBox.Tag = 'Test9';
+            app.Test9MutiVariateTestCheckBox.Enable = 'off';
+            app.Test9MutiVariateTestCheckBox.Text = 'Test 9 - Muti-Variate Test';
+            app.Test9MutiVariateTestCheckBox.Position = [190 50 154 22];
+
+            % Create Test8FlatLineTestCheckBox
+            app.Test8FlatLineTestCheckBox = uicheckbox(app.QCInputPanel);
+            app.Test8FlatLineTestCheckBox.ValueChangedFcn = createCallbackFcn(app, @Test8FlatLineTestCheckBoxValueChanged, true);
+            app.Test8FlatLineTestCheckBox.Tag = 'Test8';
+            app.Test8FlatLineTestCheckBox.Text = 'Test 8 - Flat Line Test';
+            app.Test8FlatLineTestCheckBox.Position = [190 100 136 22];
+
+            % Create Test7RateofChangeTestCheckBox
+            app.Test7RateofChangeTestCheckBox = uicheckbox(app.QCInputPanel);
+            app.Test7RateofChangeTestCheckBox.ValueChangedFcn = createCallbackFcn(app, @Test7RateofChangeTestCheckBoxValueChanged, true);
+            app.Test7RateofChangeTestCheckBox.Tag = 'Test7';
+            app.Test7RateofChangeTestCheckBox.Text = 'Test 7 - Rate of Change Test';
+            app.Test7RateofChangeTestCheckBox.Position = [190 120 174 22];
+
+            % Create Test6SpikeTestCheckBox
+            app.Test6SpikeTestCheckBox = uicheckbox(app.QCInputPanel);
+            app.Test6SpikeTestCheckBox.ValueChangedFcn = createCallbackFcn(app, @Test6SpikeTestCheckBoxValueChanged, true);
+            app.Test6SpikeTestCheckBox.Tag = 'Test6';
+            app.Test6SpikeTestCheckBox.Text = 'Test 6 - Spike Test';
+            app.Test6SpikeTestCheckBox.Position = [190 140 120 22];
+
+            % Create Test5ClimatologyTestCheckBox
+            app.Test5ClimatologyTestCheckBox = uicheckbox(app.QCInputPanel);
+            app.Test5ClimatologyTestCheckBox.ValueChangedFcn = createCallbackFcn(app, @Test5ClimatologyTestCheckBoxValueChanged, true);
+            app.Test5ClimatologyTestCheckBox.Tag = 'Test5';
+            app.Test5ClimatologyTestCheckBox.Text = 'Test 5 - Climatology Test';
+            app.Test5ClimatologyTestCheckBox.Position = [10 10 153 22];
+
+            % Create Test4GrossTestCheckBox
+            app.Test4GrossTestCheckBox = uicheckbox(app.QCInputPanel);
+            app.Test4GrossTestCheckBox.ValueChangedFcn = createCallbackFcn(app, @Test4GrossTestCheckBoxValueChanged, true);
+            app.Test4GrossTestCheckBox.Tag = 'Test4';
+            app.Test4GrossTestCheckBox.Text = 'Test 4 - Gross Test';
+            app.Test4GrossTestCheckBox.Position = [10 30 122 22];
+
+            % Create Test3LocationTestCheckBox
+            app.Test3LocationTestCheckBox = uicheckbox(app.QCInputPanel);
+            app.Test3LocationTestCheckBox.Tag = 'Test3';
+            app.Test3LocationTestCheckBox.Enable = 'off';
+            app.Test3LocationTestCheckBox.Text = 'Test 3 - Location Test';
+            app.Test3LocationTestCheckBox.Position = [10 50 135 22];
+
+            % Create Test2SyntaxTestCheckBox
+            app.Test2SyntaxTestCheckBox = uicheckbox(app.QCInputPanel);
+            app.Test2SyntaxTestCheckBox.Tag = 'Test2';
+            app.Test2SyntaxTestCheckBox.Enable = 'off';
+            app.Test2SyntaxTestCheckBox.Text = 'Test 2 - Syntax Test';
+            app.Test2SyntaxTestCheckBox.Position = [10 70 127 22];
+
+            % Create Test1TimeGapTestCheckBox
+            app.Test1TimeGapTestCheckBox = uicheckbox(app.QCInputPanel);
+            app.Test1TimeGapTestCheckBox.ValueChangedFcn = createCallbackFcn(app, @Test1TimeGapTestCheckBoxValueChanged, true);
+            app.Test1TimeGapTestCheckBox.Tag = 'Test1';
+            app.Test1TimeGapTestCheckBox.Text = 'Test 1 - Time Gap Test';
+            app.Test1TimeGapTestCheckBox.Position = [10 90 142 22];
+
+            % Create SelectfileEditFieldLabel
+            app.SelectfileEditFieldLabel = uilabel(app.QCInputPanel);
+            app.SelectfileEditFieldLabel.HorizontalAlignment = 'right';
+            app.SelectfileEditFieldLabel.Position = [3 200 64 22];
+            app.SelectfileEditFieldLabel.Text = 'Select file: ';
+
+            % Create SelectfileEditField
+            app.SelectfileEditField = uieditfield(app.QCInputPanel, 'text');
+            app.SelectfileEditField.Position = [80 200 131 22];
+
+            % Create StartQCButton
+            app.StartQCButton = uibutton(app.QCInputPanel, 'push');
+            app.StartQCButton.ButtonPushedFcn = createCallbackFcn(app, @StartQCButtonPushed, true);
+            app.StartQCButton.Position = [479 9 120 35];
+            app.StartQCButton.Text = 'Start QC';
+
+            % Create RequiredLabel
+            app.RequiredLabel = uilabel(app.QCInputPanel);
+            app.RequiredLabel.Position = [10 110 54 22];
+            app.RequiredLabel.Text = 'Required';
+
+            % Create StronglyRecommendedLabel
+            app.StronglyRecommendedLabel = uilabel(app.QCInputPanel);
+            app.StronglyRecommendedLabel.Position = [190 160 134 22];
+            app.StronglyRecommendedLabel.Text = 'Strongly Recommended';
+
+            % Create SuggestedLabel
+            app.SuggestedLabel = uilabel(app.QCInputPanel);
+            app.SuggestedLabel.Position = [190 72 62 22];
+            app.SuggestedLabel.Text = 'Suggested';
+
+            % Create QCItemDropDownLabel
+            app.QCItemDropDownLabel = uilabel(app.QCInputPanel);
+            app.QCItemDropDownLabel.HorizontalAlignment = 'right';
+            app.QCItemDropDownLabel.Position = [392 161 50 22];
+            app.QCItemDropDownLabel.Text = 'QC Item';
+
+            % Create QCItemDropDown
+            app.QCItemDropDown = uidropdown(app.QCInputPanel);
+            app.QCItemDropDown.Items = {'Wave (Hs, Tp, Tmean, Dir)', 'Current (Vel, Dir)', 'Sea Level'};
+            app.QCItemDropDown.ValueChangedFcn = createCallbackFcn(app, @QCItemDropDownValueChanged, true);
+            app.QCItemDropDown.Position = [457 161 142 22];
+            app.QCItemDropDown.Value = 'Wave (Hs, Tp, Tmean, Dir)';
+
+            % Create BrowseButton_3
+            app.BrowseButton_3 = uibutton(app.QCInputPanel, 'push');
+            app.BrowseButton_3.ButtonPushedFcn = createCallbackFcn(app, @BrowseButton_3Pushed, true);
+            app.BrowseButton_3.Position = [225 200 65 23];
+            app.BrowseButton_3.Text = 'Browse...';
+
+            % Create BrowseButton_4
+            app.BrowseButton_4 = uibutton(app.QCInputPanel, 'push');
+            app.BrowseButton_4.ButtonPushedFcn = createCallbackFcn(app, @BrowseButton_4Pushed, true);
+            app.BrowseButton_4.Position = [534 200 65 23];
+            app.BrowseButton_4.Text = 'Browse...';
+
+            % Create OutputfolderEditField_2Label
+            app.OutputfolderEditField_2Label = uilabel(app.QCInputPanel);
+            app.OutputfolderEditField_2Label.HorizontalAlignment = 'right';
+            app.OutputfolderEditField_2Label.Position = [309 200 84 22];
+            app.OutputfolderEditField_2Label.Text = 'Output folder:  ';
+
+            % Create OutputfolderEditField_2
+            app.OutputfolderEditField_2 = uieditfield(app.QCInputPanel, 'text');
+            app.OutputfolderEditField_2.Position = [408 200 117 22];
+
+            % Create PropertiesButton
+            app.PropertiesButton = uibutton(app.QCInputPanel, 'push');
+            app.PropertiesButton.ButtonPushedFcn = createCallbackFcn(app, @PropertiesButtonPushed, true);
+            app.PropertiesButton.Position = [499 60 100 23];
+            app.PropertiesButton.Text = 'Properties';
+
+            % Create StationnameEditField_2Label
+            app.StationnameEditField_2Label = uilabel(app.QCInputPanel);
+            app.StationnameEditField_2Label.Position = [396 121 82 22];
+            app.StationnameEditField_2Label.Text = 'Station name: ';
+
+            % Create StationnameEditField_2
+            app.StationnameEditField_2 = uieditfield(app.QCInputPanel, 'text');
+            app.StationnameEditField_2.Position = [486 121 113 22];
+
+            % Create SelectAllCheckBox
+            app.SelectAllCheckBox = uicheckbox(app.QCInputPanel);
+            app.SelectAllCheckBox.ValueChangedFcn = createCallbackFcn(app, @SelectAllCheckBoxValueChanged, true);
+            app.SelectAllCheckBox.Text = 'Select All';
+            app.SelectAllCheckBox.Position = [10 160 71 22];
+
+            % Create Panel
+            app.Panel = uipanel(app.UIFigure);
+            app.Panel.Title = 'Panel';
+            app.Panel.Position = [12 286 615 184];
+
+            % Create InputdataEditFieldLabel
+            app.InputdataEditFieldLabel = uilabel(app.Panel);
+            app.InputdataEditFieldLabel.Position = [13 130 62 22];
+            app.InputdataEditFieldLabel.Text = 'Input data:';
+
+            % Create StationnameEditFieldLabel
+            app.StationnameEditFieldLabel = uilabel(app.Panel);
+            app.StationnameEditFieldLabel.Position = [13 53 82 22];
+            app.StationnameEditFieldLabel.Text = 'Station name: ';
+
+            % Create ItemtypeDropDownLabel
+            app.ItemtypeDropDownLabel = uilabel(app.Panel);
+            app.ItemtypeDropDownLabel.Position = [13 90 58 22];
+            app.ItemtypeDropDownLabel.Text = 'Item type:';
+
+            % Create StartOutputFileButton
+            app.StartOutputFileButton = uibutton(app.Panel, 'push');
+            app.StartOutputFileButton.ButtonPushedFcn = createCallbackFcn(app, @StartOutputFileButtonPushed, true);
+            app.StartOutputFileButton.Position = [479 10 120 33];
+            app.StartOutputFileButton.Text = 'Start Output File';
+
+            % Create matCheckBox
+            app.matCheckBox = uicheckbox(app.Panel);
+            app.matCheckBox.Text = '.mat';
+            app.matCheckBox.Position = [300 27 45 22];
+            app.matCheckBox.Value = true;
+
+            % Create txtCheckBox
+            app.txtCheckBox = uicheckbox(app.Panel);
+            app.txtCheckBox.Text = '.txt';
+            app.txtCheckBox.Position = [300 48 38 22];
+
+            % Create csvCheckBox
+            app.csvCheckBox = uicheckbox(app.Panel);
+            app.csvCheckBox.Text = '.csv';
+            app.csvCheckBox.Position = [300 69 43 22];
+
+            % Create OutputdatafiletypeLabel
+            app.OutputdatafiletypeLabel = uilabel(app.Panel);
+            app.OutputdatafiletypeLabel.Position = [281 90 112 22];
+            app.OutputdatafiletypeLabel.Text = 'Output data file type';
+
+            % Create BrowseButton_2
+            app.BrowseButton_2 = uibutton(app.Panel, 'push');
+            app.BrowseButton_2.ButtonPushedFcn = createCallbackFcn(app, @BrowseButton_2Pushed, true);
+            app.BrowseButton_2.Position = [534 130 65 23];
+            app.BrowseButton_2.Text = 'Browse...';
+
+            % Create OutputfolderEditFieldLabel
+            app.OutputfolderEditFieldLabel = uilabel(app.Panel);
+            app.OutputfolderEditFieldLabel.HorizontalAlignment = 'right';
+            app.OutputfolderEditFieldLabel.Position = [309 130 84 22];
+            app.OutputfolderEditFieldLabel.Text = 'Output folder:  ';
+
+            % Create OutputfolderEditField
+            app.OutputfolderEditField = uieditfield(app.Panel, 'text');
+            app.OutputfolderEditField.Position = [408 130 117 22];
+
+            % Create StationnameEditField
+            app.StationnameEditField = uieditfield(app.Panel, 'text');
+            app.StationnameEditField.ValueChangedFcn = createCallbackFcn(app, @StationnameEditFieldValueChanged, true);
+            app.StationnameEditField.Position = [103 53 113 22];
+
+            % Create ItemtypeDropDown
+            app.ItemtypeDropDown = uidropdown(app.Panel);
+            app.ItemtypeDropDown.Items = {'AWAC & AQP: Current', 'AWAC & AQP: Wave(15 columns)', 'AWAC & AQP: Wave(18 columns)', 'AWAC & AQP: Wave(21 columns)', 'AWAC & AQP: Wave(31 columns)', 'AWAC: Current(Processed data)', 'AWAC: Wave(Processed data)'};
+            app.ItemtypeDropDown.ValueChangedFcn = createCallbackFcn(app, @ItemtypeDropDownValueChanged, true);
+            app.ItemtypeDropDown.Position = [73 90 187 22];
+            app.ItemtypeDropDown.Value = 'AWAC & AQP: Current';
+
+            % Create BrowseButton
+            app.BrowseButton = uibutton(app.Panel, 'push');
+            app.BrowseButton.ButtonPushedFcn = createCallbackFcn(app, @BrowseButtonPushed, true);
+            app.BrowseButton.Position = [225 130 65 23];
+            app.BrowseButton.Text = 'Browse...';
+
+            % Create InputdataEditField
+            app.InputdataEditField = uieditfield(app.Panel, 'text');
+            app.InputdataEditField.FontColor = [0.502 0.502 0.502];
+            app.InputdataEditField.Position = [83 130 133 22];
+            app.InputdataEditField.Value = 'select input data...';
+
+            % Create StartRow0AutoLabel
+            app.StartRow0AutoLabel = uilabel(app.Panel);
+            app.StartRow0AutoLabel.Position = [441 53 113 22];
+            app.StartRow0AutoLabel.Text = 'Start Row (0: Auto): ';
+
+            % Create StartRow0AutoEditField
+            app.StartRow0AutoEditField = uieditfield(app.Panel, 'numeric');
+            app.StartRow0AutoEditField.ValueChangedFcn = createCallbackFcn(app, @StartRow0AutoEditFieldValueChanged, true);
+            app.StartRow0AutoEditField.Position = [564 53 35 22];
+
+            % Show the figure after all components are created
+            app.UIFigure.Visible = 'on';
+        end
+    end
+
+    % App creation and deletion
+    methods (Access = public)
+
+        % Construct app
+        function app = Convert_raw_data_AWAC
+
+            % Create UIFigure and components
+            createComponents(app)
+
+            % Register the app with App Designer
+            registerApp(app, app.UIFigure)
+
+            if nargout == 0
+                clear app
+            end
+        end
+
+        % Code that executes before app deletion
+        function delete(app)
+
+            % Delete UIFigure when app is deleted
+            delete(app.UIFigure)
+        end
+    end
+end

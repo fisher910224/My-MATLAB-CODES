@@ -1,0 +1,512 @@
+classdef Properties_QC_curr < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        QCpropertiesCurrentUIFigure     matlab.ui.Figure
+        CancelButton                    matlab.ui.control.Button
+        OKButton                        matlab.ui.control.Button
+        Test10AttenuatedSignalTestmsPanel  matlab.ui.container.Panel
+        T10FailthresholdEditField       matlab.ui.control.NumericEditField
+        FailthresholdEditFieldLabel     matlab.ui.control.Label
+        T10WarningthresholdEditField    matlab.ui.control.NumericEditField
+        WarningthresholdEditFieldLabel  matlab.ui.control.Label
+        T10TimestepsEditField           matlab.ui.control.NumericEditField
+        TimestepsEditFieldLabel         matlab.ui.control.Label
+        Test8FlatLineTestPanel          matlab.ui.container.Panel
+        T8ChangerateEditField           matlab.ui.control.NumericEditField
+        ChangerateEditFieldLabel        matlab.ui.control.Label
+        UnchangestepsLabel              matlab.ui.control.Label
+        T8FailEditField                 matlab.ui.control.NumericEditField
+        FailEditField_2Label            matlab.ui.control.Label
+        T8SuspectEditField              matlab.ui.control.NumericEditField
+        SuspectEditField_2Label         matlab.ui.control.Label
+        Test7RateofChangeTestmsPanel    matlab.ui.container.Panel
+        T7StepsEditField                matlab.ui.control.NumericEditField
+        StepsEditFieldLabel             matlab.ui.control.Label
+        T7ChangethresholdstdEditField   matlab.ui.control.NumericEditField
+        ChangethresholdstdEditFieldLabel  matlab.ui.control.Label
+        Test6SpikeTestmsPanel           matlab.ui.container.Panel
+        T6LowerlimitEditField           matlab.ui.control.NumericEditField
+        LowerlimitEditField_3Label      matlab.ui.control.Label
+        SpikethresholdLabel             matlab.ui.control.Label
+        T6UpperlimitEditField           matlab.ui.control.NumericEditField
+        UpperlimitLabel                 matlab.ui.control.Label
+        Test5ClimatologyTestmsPanel     matlab.ui.container.Panel
+        UITable                         matlab.ui.control.Table
+        Test4GrossTestmsPanel           matlab.ui.container.Panel
+        LowerlimitEditField_2Label      matlab.ui.control.Label
+        T4LowerlimitEditField_2         matlab.ui.control.NumericEditField
+        UpperlimitEditField_2Label      matlab.ui.control.Label
+        T4UpperlimitEditField_2         matlab.ui.control.NumericEditField
+        LowerlimitEditFieldLabel        matlab.ui.control.Label
+        T4LowerlimitEditField           matlab.ui.control.NumericEditField
+        T4UpperlimitEditField           matlab.ui.control.NumericEditField
+        UpperlimitEditFieldLabel        matlab.ui.control.Label
+        UserrangeLabel                  matlab.ui.control.Label
+        SensorrangeLabel                matlab.ui.control.Label
+        Test1TimeGapTesthrPanel         matlab.ui.container.Panel
+        T1FailEditField                 matlab.ui.control.NumericEditField
+        FailEditFieldLabel              matlab.ui.control.Label
+        T1SuspectEditField              matlab.ui.control.NumericEditField
+        SuspectLabel                    matlab.ui.control.Label
+        QCpropertiesCurrentLabel        matlab.ui.control.Label
+        Samplingratehr0meansautoEditField  matlab.ui.control.NumericEditField
+        Samplingratehr0meansautoEditFieldLabel  matlab.ui.control.Label
+    end
+
+    
+    properties (Access = public)
+        Results = struct("t1_suspect", 1/60, "t1_fail", 5/60, ...
+                    "t4_sensor_range", [-15 15], "t4_user_range", [0 2], ...
+                    "t5_sensor_range", repmat([-15 15], 12, 1), "t5_user_range", [0 1.1; 0 1.1; 0 1.1; 0 1.1; 0 1.1; 0 1.2; ... % 1-6月
+                                                                                  0 1.2; 0 1.2; 0 1.2; 0 1.2; 0 1.2; 0 1.1], ... % 7-12月
+                    "t6_threshold_low", 0.6, "t6_threshold_high", 1.0, ...
+                    "t7_n_dev", 3, "t7_tim_dev_hours", 8, ...
+                    "t8_rep_suspect", 3, "t8_rep_fail", 5, "t8_esp_val", 0.001, ...
+                    "t10_min_var_warn", 0.045, "t10_min_var_fail", 0.005, "t10_n_tst", 12);
+    end
+
+    methods (Access = public)
+        function loadSettings(app, cfg)
+            if isempty(cfg); return; end
+
+            % 每個欄位都要確保「欄位存在」且「不是空的」才填入
+            if isfield(cfg, 't1_suspect') && ~isempty(cfg.t1_suspect)
+                app.T1SuspectEditField.Value = cfg.t1_suspect; 
+            end
+            if isfield(cfg, 't1_fail') && ~isempty(cfg.t1_fail)
+                app.T1FailEditField.Value = cfg.t1_fail; 
+            end
+
+            if isfield(cfg, 't4_sensor_range') && ~isempty(cfg.t4_sensor_range)
+                app.T4LowerlimitEditField.Value = cfg.t4_sensor_range(1); 
+                app.T4UpperlimitEditField.Value = cfg.t4_sensor_range(2); 
+            end
+            if isfield(cfg, 't4_user_range') && ~isempty(cfg.t4_user_range)
+                app.T4UserLowerlimitEditField.Value = cfg.t4_user_range(1); 
+                app.T4UserUpperlimitEditField.Value = cfg.t4_user_range(2); 
+            end
+
+            if isfield(cfg, 't5_sensor_range') && isfield(cfg, 't5_user_range') && ~isempty(cfg.t5_sensor_range) && ~isempty(cfg.t5_user_range)
+                app.UITable.Data = [cfg.t5_sensor_range, cfg.t5_user_range];
+            end
+
+            if isfield(cfg, 't6_threshold_low') && ~isempty(cfg.t6_threshold_low)
+                app.T6LowerlimitEditField.Value = cfg.t6_threshold_low;
+            end
+            if isfield(cfg, 't6_threshold_high') && ~isempty(cfg.t6_threshold_high)
+                app.T6UpperlimitEditField.Value = cfg.t6_threshold_high;
+            end
+
+            if isfield(cfg, 't7_n_dev') && ~isempty(cfg.t7_n_dev)
+                app.T7ChangethresholdstdEditField.Value = cfg.t7_n_dev;
+            end
+            if isfield(cfg, 't7_tim_dev_hours') && ~isempty(cfg.t7_tim_dev_hours)
+                app.T7StepsEditField.Value = cfg.t7_tim_dev_hours;
+            end
+
+            if isfield(cfg, 't8_rep_suspect') && ~isempty(cfg.t8_rep_suspect)
+                app.T8SuspectEditField.Value = cfg.t8_rep_suspect;
+            end
+            if isfield(cfg, 't8_rep_fail') && ~isempty(cfg.t8_rep_fail)
+                app.T8FailEditField.Value = cfg.t8_rep_fail;
+            end
+            if isfield(cfg, 't8_esp_val') && ~isempty(cfg.t8_esp_val)
+                app.T8ChangerateEditField.Value = cfg.t8_esp_val;
+            end
+
+            if isfield(cfg, 't10_min_var_warn') && ~isempty(cfg.t10_min_var_warn)
+                app.T10WarningthresholdEditField.Value = cfg.t10_min_var_warn;
+            end
+            if isfield(cfg, 't10_min_var_fail') && ~isempty(cfg.t10_min_var_fail)
+                app.T10FailthresholdEditField.Value = cfg.t10_min_var_fail;
+            end
+            if isfield(cfg, 't10_n_tst') && ~isempty(cfg.t10_n_tst)
+                app.T10TimestepsEditField.Value = cfg.t10_n_tst;
+            end
+            
+        end
+    end
+
+
+    % Callbacks that handle component events
+    methods (Access = private)
+
+        % Code that executes after component creation
+        function startupFcn(app)
+            % 1. 建立 12 列 x 4 欄的預設矩陣
+            sensor_default_vals = repmat([-15, 15], 12, 1);
+            user_default_vals = [
+                0 1.1; 0 1.1; 0 1.1; 0 1.1; 0 1.1; 0 1.2; ... % 1-6月
+                0 1.2; 0 1.2; 0 1.2; 0 1.2; 0 1.2; 0 1.1      % 7-12月
+            ];
+            
+            % 2. 手動用程式碼設定欄位與列名稱
+            app.UITable.ColumnName = {'Sensor lower limit', 'Sensor upper limit', 'User lower limit', 'User upper limit'};
+            app.UITable.RowName = {'Jan.', 'Feb.', 'Mar.', 'Apr.', 'May.', 'Jun.', ...
+                                   'Jul.', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.'};
+        
+            % 3. 注入純數值矩陣
+            app.UITable.Data = [sensor_default_vals, user_default_vals];
+            app.UITable.ColumnFormat = {'bank', 'bank', 'bank', 'bank'};
+
+            if nargin > 1 && ~isempty(initialSettings)
+                if nargin > 1 && ~isempty(initialSettings)
+                    app.loadSettings(initialSettings);
+                end
+            end
+
+        end
+
+        % Button pushed function: CancelButton
+        function CancelButtonPushed(app, event)
+            app.Results = []; % 代表取消，不回傳任何東西
+            uiresume(app.QCpropertiesCurrentUIFigure);
+            app.QCpropertiesCurrentUIFigure.Visible = 'off';
+        end
+
+        % Button pushed function: OKButton
+        function OKButtonPushed(app, event)
+
+            app.Results.t1_suspect = app.T1SuspectEditField.Value;
+            app.Results.t1_fail = app.T1FailEditField.Value;
+
+            app.Results.t4_sensor_range = [app.T4LowerlimitEditField.Value, app.T4UpperlimitEditField.Value];
+            app.Results.t4_user_range = [app.T4LowerlimitEditField_2.Value, app.T4UpperlimitEditField_2.Value];
+
+            app.Results.t5_sensor_range = double(app.UITable.Data(:, 1:2));
+            app.Results.t5_user_range   = double(app.UITable.Data(:, 3:4));
+
+            app.Results.t6_threshold_low = app.T6LowerlimitEditField.Value;
+            app.Results.t6_threshold_high = app.T6UpperlimitEditField.Value;
+
+            app.Results.t7_n_dev = app.T7ChangethresholdstdEditField.Value;
+            app.Results.t7_tim_dev_hours = app.T7StepsEditField.Value;
+
+            app.Results.t8_rep_suspect = app.T8SuspectEditField.Value;
+            app.Results.t8_rep_fail = app.T8FailEditField.Value;
+            app.Results.t8_esp_val = app.T8ChangerateEditField.Value;
+
+            app.Results.t10_min_var_warn = app.T10WarningthresholdEditField.Value;
+            app.Results.t10_min_var_fail = app.T10FailthresholdEditField.Value;
+            app.Results.t10_n_tst = app.T10TimestepsEditField.Value;
+            
+            uiresume(app.QCpropertiesCurrentUIFigure);
+            % delete(app.QCpropertiesCurrentUIFigure);
+            app.QCpropertiesCurrentUIFigure.Visible = 'off'; 
+        end
+    end
+
+    % Component initialization
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Create QCpropertiesCurrentUIFigure and hide until all components are created
+            app.QCpropertiesCurrentUIFigure = uifigure('Visible', 'off');
+            app.QCpropertiesCurrentUIFigure.Position = [100 100 554 553];
+            app.QCpropertiesCurrentUIFigure.Name = 'QC properties - Current';
+
+            % Create Samplingratehr0meansautoEditFieldLabel
+            app.Samplingratehr0meansautoEditFieldLabel = uilabel(app.QCpropertiesCurrentUIFigure);
+            app.Samplingratehr0meansautoEditFieldLabel.Position = [15 498 186 22];
+            app.Samplingratehr0meansautoEditFieldLabel.Text = 'Sampling rate (hr, 0 means auto): ';
+
+            % Create Samplingratehr0meansautoEditField
+            app.Samplingratehr0meansautoEditField = uieditfield(app.QCpropertiesCurrentUIFigure, 'numeric');
+            app.Samplingratehr0meansautoEditField.Position = [200 498 48 22];
+            app.Samplingratehr0meansautoEditField.Value = 1;
+
+            % Create QCpropertiesCurrentLabel
+            app.QCpropertiesCurrentLabel = uilabel(app.QCpropertiesCurrentUIFigure);
+            app.QCpropertiesCurrentLabel.FontWeight = 'bold';
+            app.QCpropertiesCurrentLabel.Position = [14 522 139 22];
+            app.QCpropertiesCurrentLabel.Text = 'QC properties - Current';
+
+            % Create Test1TimeGapTesthrPanel
+            app.Test1TimeGapTesthrPanel = uipanel(app.QCpropertiesCurrentUIFigure);
+            app.Test1TimeGapTesthrPanel.Title = 'Test 1 - Time Gap Test (hr)';
+            app.Test1TimeGapTesthrPanel.Position = [15 398 249 93];
+
+            % Create SuspectLabel
+            app.SuspectLabel = uilabel(app.Test1TimeGapTesthrPanel);
+            app.SuspectLabel.Position = [12 41 55 22];
+            app.SuspectLabel.Text = 'Suspect: ';
+
+            % Create T1SuspectEditField
+            app.T1SuspectEditField = uieditfield(app.Test1TimeGapTesthrPanel, 'numeric');
+            app.T1SuspectEditField.HorizontalAlignment = 'left';
+            app.T1SuspectEditField.Position = [88 41 68 22];
+            app.T1SuspectEditField.Value = 0.0167;
+
+            % Create FailEditFieldLabel
+            app.FailEditFieldLabel = uilabel(app.Test1TimeGapTesthrPanel);
+            app.FailEditFieldLabel.Position = [12 11 31 22];
+            app.FailEditFieldLabel.Text = 'Fail: ';
+
+            % Create T1FailEditField
+            app.T1FailEditField = uieditfield(app.Test1TimeGapTesthrPanel, 'numeric');
+            app.T1FailEditField.HorizontalAlignment = 'left';
+            app.T1FailEditField.Position = [88 11 68 22];
+            app.T1FailEditField.Value = 0.0833;
+
+            % Create Test4GrossTestmsPanel
+            app.Test4GrossTestmsPanel = uipanel(app.QCpropertiesCurrentUIFigure);
+            app.Test4GrossTestmsPanel.Title = 'Test 4 - Gross Test (m/s)';
+            app.Test4GrossTestmsPanel.Position = [15 218 249 164];
+
+            % Create SensorrangeLabel
+            app.SensorrangeLabel = uilabel(app.Test4GrossTestmsPanel);
+            app.SensorrangeLabel.Position = [17 88 77 22];
+            app.SensorrangeLabel.Text = 'Sensor range';
+
+            % Create UserrangeLabel
+            app.UserrangeLabel = uilabel(app.Test4GrossTestmsPanel);
+            app.UserrangeLabel.Position = [17 28 64 22];
+            app.UserrangeLabel.Text = 'User range';
+
+            % Create UpperlimitEditFieldLabel
+            app.UpperlimitEditFieldLabel = uilabel(app.Test4GrossTestmsPanel);
+            app.UpperlimitEditFieldLabel.Position = [117 103 69 22];
+            app.UpperlimitEditFieldLabel.Text = 'Upper limit: ';
+
+            % Create T4UpperlimitEditField
+            app.T4UpperlimitEditField = uieditfield(app.Test4GrossTestmsPanel, 'numeric');
+            app.T4UpperlimitEditField.HorizontalAlignment = 'left';
+            app.T4UpperlimitEditField.Position = [187 103 48 22];
+            app.T4UpperlimitEditField.Value = 15;
+
+            % Create T4LowerlimitEditField
+            app.T4LowerlimitEditField = uieditfield(app.Test4GrossTestmsPanel, 'numeric');
+            app.T4LowerlimitEditField.HorizontalAlignment = 'left';
+            app.T4LowerlimitEditField.Position = [187 73 48 22];
+            app.T4LowerlimitEditField.Value = -15;
+
+            % Create LowerlimitEditFieldLabel
+            app.LowerlimitEditFieldLabel = uilabel(app.Test4GrossTestmsPanel);
+            app.LowerlimitEditFieldLabel.Position = [117 73 69 22];
+            app.LowerlimitEditFieldLabel.Text = 'Lower limit: ';
+
+            % Create T4UpperlimitEditField_2
+            app.T4UpperlimitEditField_2 = uieditfield(app.Test4GrossTestmsPanel, 'numeric');
+            app.T4UpperlimitEditField_2.HorizontalAlignment = 'left';
+            app.T4UpperlimitEditField_2.Position = [187 39 48 22];
+            app.T4UpperlimitEditField_2.Value = 2;
+
+            % Create UpperlimitEditField_2Label
+            app.UpperlimitEditField_2Label = uilabel(app.Test4GrossTestmsPanel);
+            app.UpperlimitEditField_2Label.Position = [117 39 69 22];
+            app.UpperlimitEditField_2Label.Text = 'Upper limit: ';
+
+            % Create T4LowerlimitEditField_2
+            app.T4LowerlimitEditField_2 = uieditfield(app.Test4GrossTestmsPanel, 'numeric');
+            app.T4LowerlimitEditField_2.HorizontalAlignment = 'left';
+            app.T4LowerlimitEditField_2.Position = [187 8 48 22];
+
+            % Create LowerlimitEditField_2Label
+            app.LowerlimitEditField_2Label = uilabel(app.Test4GrossTestmsPanel);
+            app.LowerlimitEditField_2Label.Position = [117 8 69 22];
+            app.LowerlimitEditField_2Label.Text = 'Lower limit: ';
+
+            % Create Test5ClimatologyTestmsPanel
+            app.Test5ClimatologyTestmsPanel = uipanel(app.QCpropertiesCurrentUIFigure);
+            app.Test5ClimatologyTestmsPanel.Title = 'Test 5 - Climatology Test (m/s)';
+            app.Test5ClimatologyTestmsPanel.Position = [15 18 249 186];
+
+            % Create UITable
+            app.UITable = uitable(app.Test5ClimatologyTestmsPanel);
+            app.UITable.ColumnName = {'Sensor Min'; 'Sensor Max'; 'User Min'; 'User Max'};
+            app.UITable.RowName = {'Jan.,Feb.,Mar.,Apr.,May.,Jun,Jul.,Aug.,Sep.,Oct.,Nov.,Dec.'};
+            app.UITable.ColumnEditable = true;
+            app.UITable.Position = [1 0 248 165];
+
+            % Create Test6SpikeTestmsPanel
+            app.Test6SpikeTestmsPanel = uipanel(app.QCpropertiesCurrentUIFigure);
+            app.Test6SpikeTestmsPanel.Title = 'Test 6 - Spike Test (m/s)';
+            app.Test6SpikeTestmsPanel.Position = [281 449 260 95];
+
+            % Create UpperlimitLabel
+            app.UpperlimitLabel = uilabel(app.Test6SpikeTestmsPanel);
+            app.UpperlimitLabel.Position = [116 40 69 22];
+            app.UpperlimitLabel.Text = 'Upper limit: ';
+
+            % Create T6UpperlimitEditField
+            app.T6UpperlimitEditField = uieditfield(app.Test6SpikeTestmsPanel, 'numeric');
+            app.T6UpperlimitEditField.HorizontalAlignment = 'left';
+            app.T6UpperlimitEditField.Position = [210 40 35 22];
+            app.T6UpperlimitEditField.Value = 1;
+
+            % Create SpikethresholdLabel
+            app.SpikethresholdLabel = uilabel(app.Test6SpikeTestmsPanel);
+            app.SpikethresholdLabel.Position = [15 28 88 22];
+            app.SpikethresholdLabel.Text = 'Spike threshold';
+
+            % Create LowerlimitEditField_3Label
+            app.LowerlimitEditField_3Label = uilabel(app.Test6SpikeTestmsPanel);
+            app.LowerlimitEditField_3Label.Position = [116 10 69 22];
+            app.LowerlimitEditField_3Label.Text = 'Lower limit: ';
+
+            % Create T6LowerlimitEditField
+            app.T6LowerlimitEditField = uieditfield(app.Test6SpikeTestmsPanel, 'numeric');
+            app.T6LowerlimitEditField.HorizontalAlignment = 'left';
+            app.T6LowerlimitEditField.Position = [210 10 35 22];
+            app.T6LowerlimitEditField.Value = 0.6;
+
+            % Create Test7RateofChangeTestmsPanel
+            app.Test7RateofChangeTestmsPanel = uipanel(app.QCpropertiesCurrentUIFigure);
+            app.Test7RateofChangeTestmsPanel.Title = 'Test 7 - Rate of Change Test (m/s)';
+            app.Test7RateofChangeTestmsPanel.Position = [281 336 260 104];
+
+            % Create ChangethresholdstdEditFieldLabel
+            app.ChangethresholdstdEditFieldLabel = uilabel(app.Test7RateofChangeTestmsPanel);
+            app.ChangethresholdstdEditFieldLabel.Position = [14 50 137 22];
+            app.ChangethresholdstdEditFieldLabel.Text = 'Change threshold (std.): ';
+
+            % Create T7ChangethresholdstdEditField
+            app.T7ChangethresholdstdEditField = uieditfield(app.Test7RateofChangeTestmsPanel, 'numeric');
+            app.T7ChangethresholdstdEditField.HorizontalAlignment = 'left';
+            app.T7ChangethresholdstdEditField.Position = [180 50 65 22];
+            app.T7ChangethresholdstdEditField.Value = 3;
+
+            % Create StepsEditFieldLabel
+            app.StepsEditFieldLabel = uilabel(app.Test7RateofChangeTestmsPanel);
+            app.StepsEditFieldLabel.Position = [15 15 42 22];
+            app.StepsEditFieldLabel.Text = 'Steps: ';
+
+            % Create T7StepsEditField
+            app.T7StepsEditField = uieditfield(app.Test7RateofChangeTestmsPanel, 'numeric');
+            app.T7StepsEditField.ValueDisplayFormat = '%d';
+            app.T7StepsEditField.HorizontalAlignment = 'left';
+            app.T7StepsEditField.Position = [180 15 65 22];
+            app.T7StepsEditField.Value = 8;
+
+            % Create Test8FlatLineTestPanel
+            app.Test8FlatLineTestPanel = uipanel(app.QCpropertiesCurrentUIFigure);
+            app.Test8FlatLineTestPanel.Title = 'Test 8 - Flat Line Test';
+            app.Test8FlatLineTestPanel.Position = [281 191 260 131];
+
+            % Create SuspectEditField_2Label
+            app.SuspectEditField_2Label = uilabel(app.Test8FlatLineTestPanel);
+            app.SuspectEditField_2Label.Position = [117 80 55 22];
+            app.SuspectEditField_2Label.Text = 'Suspect: ';
+
+            % Create T8SuspectEditField
+            app.T8SuspectEditField = uieditfield(app.Test8FlatLineTestPanel, 'numeric');
+            app.T8SuspectEditField.ValueDisplayFormat = '%d';
+            app.T8SuspectEditField.HorizontalAlignment = 'left';
+            app.T8SuspectEditField.Position = [200 80 47 22];
+            app.T8SuspectEditField.Value = 3;
+
+            % Create FailEditField_2Label
+            app.FailEditField_2Label = uilabel(app.Test8FlatLineTestPanel);
+            app.FailEditField_2Label.Position = [117 50 31 22];
+            app.FailEditField_2Label.Text = 'Fail: ';
+
+            % Create T8FailEditField
+            app.T8FailEditField = uieditfield(app.Test8FlatLineTestPanel, 'numeric');
+            app.T8FailEditField.ValueDisplayFormat = '%d';
+            app.T8FailEditField.HorizontalAlignment = 'left';
+            app.T8FailEditField.Position = [200 50 47 22];
+            app.T8FailEditField.Value = 5;
+
+            % Create UnchangestepsLabel
+            app.UnchangestepsLabel = uilabel(app.Test8FlatLineTestPanel);
+            app.UnchangestepsLabel.Position = [15 65 92 22];
+            app.UnchangestepsLabel.Text = 'Unchange steps';
+
+            % Create ChangerateEditFieldLabel
+            app.ChangerateEditFieldLabel = uilabel(app.Test8FlatLineTestPanel);
+            app.ChangerateEditFieldLabel.Position = [117 20 78 22];
+            app.ChangerateEditFieldLabel.Text = 'Change rate: ';
+
+            % Create T8ChangerateEditField
+            app.T8ChangerateEditField = uieditfield(app.Test8FlatLineTestPanel, 'numeric');
+            app.T8ChangerateEditField.HorizontalAlignment = 'left';
+            app.T8ChangerateEditField.Position = [200 20 47 22];
+            app.T8ChangerateEditField.Value = 0.001;
+
+            % Create Test10AttenuatedSignalTestmsPanel
+            app.Test10AttenuatedSignalTestmsPanel = uipanel(app.QCpropertiesCurrentUIFigure);
+            app.Test10AttenuatedSignalTestmsPanel.Title = 'Test 10 - Attenuated Signal Test (m/s)';
+            app.Test10AttenuatedSignalTestmsPanel.Position = [281 53 260 121];
+
+            % Create TimestepsEditFieldLabel
+            app.TimestepsEditFieldLabel = uilabel(app.Test10AttenuatedSignalTestmsPanel);
+            app.TimestepsEditFieldLabel.Position = [16 68 70 22];
+            app.TimestepsEditFieldLabel.Text = 'Time steps: ';
+
+            % Create T10TimestepsEditField
+            app.T10TimestepsEditField = uieditfield(app.Test10AttenuatedSignalTestmsPanel, 'numeric');
+            app.T10TimestepsEditField.ValueDisplayFormat = '%d';
+            app.T10TimestepsEditField.HorizontalAlignment = 'left';
+            app.T10TimestepsEditField.Position = [200 68 47 22];
+            app.T10TimestepsEditField.Value = 12;
+
+            % Create WarningthresholdEditFieldLabel
+            app.WarningthresholdEditFieldLabel = uilabel(app.Test10AttenuatedSignalTestmsPanel);
+            app.WarningthresholdEditFieldLabel.Position = [16 38 109 22];
+            app.WarningthresholdEditFieldLabel.Text = 'Warning threshold: ';
+
+            % Create T10WarningthresholdEditField
+            app.T10WarningthresholdEditField = uieditfield(app.Test10AttenuatedSignalTestmsPanel, 'numeric');
+            app.T10WarningthresholdEditField.HorizontalAlignment = 'left';
+            app.T10WarningthresholdEditField.Position = [200 38 47 22];
+            app.T10WarningthresholdEditField.Value = 0.045;
+
+            % Create FailthresholdEditFieldLabel
+            app.FailthresholdEditFieldLabel = uilabel(app.Test10AttenuatedSignalTestmsPanel);
+            app.FailthresholdEditFieldLabel.Position = [16 8 84 22];
+            app.FailthresholdEditFieldLabel.Text = 'Fail threshold: ';
+
+            % Create T10FailthresholdEditField
+            app.T10FailthresholdEditField = uieditfield(app.Test10AttenuatedSignalTestmsPanel, 'numeric');
+            app.T10FailthresholdEditField.HorizontalAlignment = 'left';
+            app.T10FailthresholdEditField.Position = [200 8 47 22];
+            app.T10FailthresholdEditField.Value = 0.001;
+
+            % Create OKButton
+            app.OKButton = uibutton(app.QCpropertiesCurrentUIFigure, 'push');
+            app.OKButton.ButtonPushedFcn = createCallbackFcn(app, @OKButtonPushed, true);
+            app.OKButton.Position = [440 15 100 23];
+            app.OKButton.Text = 'OK';
+
+            % Create CancelButton
+            app.CancelButton = uibutton(app.QCpropertiesCurrentUIFigure, 'push');
+            app.CancelButton.ButtonPushedFcn = createCallbackFcn(app, @CancelButtonPushed, true);
+            app.CancelButton.Position = [330 15 100 23];
+            app.CancelButton.Text = 'Cancel';
+
+            % Show the figure after all components are created
+            app.QCpropertiesCurrentUIFigure.Visible = 'on';
+        end
+    end
+
+    % App creation and deletion
+    methods (Access = public)
+
+        % Construct app
+        function app = Properties_QC_curr
+
+            % Create UIFigure and components
+            createComponents(app)
+
+            % Register the app with App Designer
+            registerApp(app, app.QCpropertiesCurrentUIFigure)
+
+            % Execute the startup function
+            runStartupFcn(app, @startupFcn)
+
+            if nargout == 0
+                clear app
+            end
+        end
+
+        % Code that executes before app deletion
+        function delete(app)
+
+            % Delete UIFigure when app is deleted
+            delete(app.QCpropertiesCurrentUIFigure)
+        end
+    end
+end

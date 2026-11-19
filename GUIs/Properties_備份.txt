@@ -1,0 +1,295 @@
+classdef Properties_statistics < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        UIFigure                        matlab.ui.Figure
+        WindRosePanel                   matlab.ui.container.Panel
+        FrequecyintervalSpinner_2Label  matlab.ui.control.Label
+        SeasonalMonthly0AutoLabel       matlab.ui.control.Label
+        Allyear0AutoLabel               matlab.ui.control.Label
+        RoseMaxFreqSpinnerLabel_2       matlab.ui.control.Label
+        FrequecyintervalSpinner         matlab.ui.control.Spinner
+        FrequecyintervalSpinnerLabel    matlab.ui.control.Label
+        FrequecyintervalSpinner_2       matlab.ui.control.Spinner
+        RoseMaxFreqSpinner              matlab.ui.control.Spinner
+        RoseMaxFreqSpinner_2            matlab.ui.control.Spinner
+        RoseMaxFreqSpinnerLabel         matlab.ui.control.Label
+        PictureexportformatDropDown     matlab.ui.control.DropDown
+        PictureexportformatLabel        matlab.ui.control.Label
+        StasticsseasonalplotPanel       matlab.ui.container.Panel
+        WindspeedprobYlimSpinner        matlab.ui.control.Spinner
+        WindspeedprobYlimLabel          matlab.ui.control.Label
+        DirectionprobYlimSpinner        matlab.ui.control.Spinner
+        DirectionprobYlimLabel          matlab.ui.control.Label
+        CancelButton                    matlab.ui.control.Button
+        OkButton                        matlab.ui.control.Button
+        ProbabilityContourfPanel        matlab.ui.container.Panel
+        ColormapDropDown                matlab.ui.control.DropDown
+        ColormapDropDownLabel           matlab.ui.control.Label
+        FlipcoloruptodownCheckBox       matlab.ui.control.CheckBox
+    end
+
+    
+    properties (Access = public)
+        Results = struct('Colormap', 'gray', 'IsFlipped', true, 'Format', '.png', ...
+            'Dirplot_ylim', 30, 'WindSpeed_ylim', 50, ...
+            'all_MaxFrequency', 0, 'all_nfreq', 4, 'mon_MaxFrequency', 0, 'mon_nfreq', 5) % Description
+    end
+
+    methods (Access = public)
+        function loadSettings(app, cfg)
+            if isempty(cfg); return; end
+
+            % 每個欄位都要確保「欄位存在」且「不是空的」才填入
+            if isfield(cfg, 'Colormap') && ~isempty(cfg.Colormap)
+                app.ColormapDropDown.Value = cfg.Colormap; 
+            end
+            if isfield(cfg, 'IsFlipped') && ~isempty(cfg.IsFlipped)
+                app.FlipcoloruptodownCheckBox.Value = cfg.IsFlipped; 
+            end
+            if isfield(cfg, 'Format') && ~isempty(cfg.Format)
+                app.PictureexportformatDropDown.Value = char(cfg.Format); 
+            end
+            if isfield(cfg, 'Dirplot_ylim') && ~isempty(cfg.Dirplot_ylim)
+                app.DirectionprobYlimSpinner.Value = cfg.Dirplot_ylim; 
+            end
+            if isfield(cfg, 'WindSpeed_ylim') && ~isempty(cfg.WindSpeed_ylim)
+                app.WindspeedprobYlimSpinner.Value = cfg.WindSpeed_ylim; 
+            end
+            if isfield(cfg, 'all_MaxFrequency') && ~isempty(cfg.all_MaxFrequency)
+                app.RoseMaxFreqSpinner.Value = cfg.all_MaxFrequency; 
+            end
+            if isfield(cfg, 'all_nfreq') && ~isempty(cfg.all_nfreq)
+                app.FrequecyintervalSpinner.Value = cfg.all_nfreq; 
+            end
+
+            if isfield(cfg, 'mon_MaxFrequency') && ~isempty(cfg.mon_MaxFrequency)
+                app.RoseMaxFreqSpinner_2.Value = cfg.mon_MaxFrequency;
+            else
+                app.RoseMaxFreqSpinner_2.Value = 0;
+            end
+            
+            if isfield(cfg, 'mon_nfreq') && ~isempty(cfg.mon_nfreq)
+                app.FrequecyintervalSpinner_2.Value = cfg.mon_nfreq;
+            else
+                app.FrequecyintervalSpinner_2.Value = 0;
+            end
+        end
+    end
+    
+
+    % Callbacks that handle component events
+    methods (Access = private)
+
+        % Code that executes after component creation
+        function startupFcn(app, initialSettings)
+            % Code that executes after component creation 
+            if nargin > 1 && ~isempty(initialSettings)
+                if nargin > 1 && ~isempty(initialSettings)
+                    app.loadSettings(initialSettings);
+                end
+            end
+        end
+
+        % Button pushed function: OkButton
+        function OkButtonPushed(app, event)
+            app.Results.Colormap = app.ColormapDropDown.Value;
+            app.Results.IsFlipped = app.FlipcoloruptodownCheckBox.Value;
+            app.Results.Format = app.PictureexportformatDropDown.Value;
+
+            app.Results.Dirplot_ylim = app.DirectionprobYlimSpinner.Value;
+            app.Results.WindSpeed_ylim = app.WindspeedprobYlimSpinner.Value;
+
+            app.Results.all_MaxFrequency = app.RoseMaxFreqSpinner.Value;
+            app.Results.all_nfreq = app.FrequecyintervalSpinner.Value;
+            if app.RoseMaxFreqSpinner_2.Value ~= 0
+                app.Results.mon_MaxFrequency = app.RoseMaxFreqSpinner_2.Value;
+            else
+                app.Results.mon_MaxFrequency = [];
+            end
+            if app.FrequecyintervalSpinner_2.Value ~= 0
+                app.Results.mon_nfreq = app.FrequecyintervalSpinner_2.Value;
+            else
+                app.Results.mon_nfreq = [];
+            end
+
+            uiresume(app.UIFigure);
+            % delete(app.UIFigure);
+            app.UIFigure.Visible = 'off'; 
+        end
+
+        % Button pushed function: CancelButton
+        function CancelButtonPushed(app, event)
+                app.Results = []; % 代表取消，不回傳任何東西
+                uiresume(app.UIFigure);
+                app.UIFigure.Visible = 'off';
+        end
+    end
+
+    % Component initialization
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Create UIFigure and hide until all components are created
+            app.UIFigure = uifigure('Visible', 'off');
+            app.UIFigure.Position = [100 100 574 356];
+            app.UIFigure.Name = 'MATLAB App';
+
+            % Create ProbabilityContourfPanel
+            app.ProbabilityContourfPanel = uipanel(app.UIFigure);
+            app.ProbabilityContourfPanel.Title = 'Probability Contourf';
+            app.ProbabilityContourfPanel.Position = [10 233 260 115];
+
+            % Create FlipcoloruptodownCheckBox
+            app.FlipcoloruptodownCheckBox = uicheckbox(app.ProbabilityContourfPanel);
+            app.FlipcoloruptodownCheckBox.Text = 'Flip color up to down';
+            app.FlipcoloruptodownCheckBox.Position = [31 21 133 22];
+            app.FlipcoloruptodownCheckBox.Value = true;
+
+            % Create ColormapDropDownLabel
+            app.ColormapDropDownLabel = uilabel(app.ProbabilityContourfPanel);
+            app.ColormapDropDownLabel.Position = [21 53 60 22];
+            app.ColormapDropDownLabel.Text = 'Color map';
+
+            % Create ColormapDropDown
+            app.ColormapDropDown = uidropdown(app.ProbabilityContourfPanel);
+            app.ColormapDropDown.Items = {'gray', 'jet', 'hot', 'parula', 'turbo', 'hsv', 'cool'};
+            app.ColormapDropDown.Position = [110 52 100 22];
+            app.ColormapDropDown.Value = 'gray';
+
+            % Create OkButton
+            app.OkButton = uibutton(app.UIFigure, 'push');
+            app.OkButton.ButtonPushedFcn = createCallbackFcn(app, @OkButtonPushed, true);
+            app.OkButton.Position = [294 38 100 23];
+            app.OkButton.Text = 'Ok';
+
+            % Create CancelButton
+            app.CancelButton = uibutton(app.UIFigure, 'push');
+            app.CancelButton.ButtonPushedFcn = createCallbackFcn(app, @CancelButtonPushed, true);
+            app.CancelButton.Position = [413 38 100 23];
+            app.CancelButton.Text = 'Cancel';
+
+            % Create StasticsseasonalplotPanel
+            app.StasticsseasonalplotPanel = uipanel(app.UIFigure);
+            app.StasticsseasonalplotPanel.Title = 'Stastics seasonal plot';
+            app.StasticsseasonalplotPanel.Position = [286 233 260 115];
+
+            % Create DirectionprobYlimLabel
+            app.DirectionprobYlimLabel = uilabel(app.StasticsseasonalplotPanel);
+            app.DirectionprobYlimLabel.Position = [8 52 138 22];
+            app.DirectionprobYlimLabel.Text = 'Direction prob. Ylim (%): ';
+
+            % Create DirectionprobYlimSpinner
+            app.DirectionprobYlimSpinner = uispinner(app.StasticsseasonalplotPanel);
+            app.DirectionprobYlimSpinner.Position = [162 52 88 22];
+            app.DirectionprobYlimSpinner.Value = 30;
+
+            % Create WindspeedprobYlimLabel
+            app.WindspeedprobYlimLabel = uilabel(app.StasticsseasonalplotPanel);
+            app.WindspeedprobYlimLabel.Position = [9 21 154 22];
+            app.WindspeedprobYlimLabel.Text = 'Wind speed prob. Ylim (%): ';
+
+            % Create WindspeedprobYlimSpinner
+            app.WindspeedprobYlimSpinner = uispinner(app.StasticsseasonalplotPanel);
+            app.WindspeedprobYlimSpinner.Position = [162 21 89 22];
+            app.WindspeedprobYlimSpinner.Value = 50;
+
+            % Create PictureexportformatLabel
+            app.PictureexportformatLabel = uilabel(app.UIFigure);
+            app.PictureexportformatLabel.Position = [32 38 127 22];
+            app.PictureexportformatLabel.Text = 'Picture export format: ';
+
+            % Create PictureexportformatDropDown
+            app.PictureexportformatDropDown = uidropdown(app.UIFigure);
+            app.PictureexportformatDropDown.Items = {'.png', '.jpg', '.pdf'};
+            app.PictureexportformatDropDown.Position = [158 38 90 22];
+            app.PictureexportformatDropDown.Value = '.png';
+
+            % Create WindRosePanel
+            app.WindRosePanel = uipanel(app.UIFigure);
+            app.WindRosePanel.Title = 'WindRose';
+            app.WindRosePanel.Position = [10 81 536 141];
+
+            % Create RoseMaxFreqSpinnerLabel
+            app.RoseMaxFreqSpinnerLabel = uilabel(app.WindRosePanel);
+            app.RoseMaxFreqSpinnerLabel.Position = [10 60 119 22];
+            app.RoseMaxFreqSpinnerLabel.Text = 'Rose Max Freq. (%): ';
+
+            % Create RoseMaxFreqSpinner_2
+            app.RoseMaxFreqSpinner_2 = uispinner(app.WindRosePanel);
+            app.RoseMaxFreqSpinner_2.Position = [318 60 55 22];
+
+            % Create RoseMaxFreqSpinner
+            app.RoseMaxFreqSpinner = uispinner(app.WindRosePanel);
+            app.RoseMaxFreqSpinner.Position = [125 60 55 22];
+
+            % Create FrequecyintervalSpinner_2
+            app.FrequecyintervalSpinner_2 = uispinner(app.WindRosePanel);
+            app.FrequecyintervalSpinner_2.Position = [318 30 55 22];
+            app.FrequecyintervalSpinner_2.Value = 5;
+
+            % Create FrequecyintervalSpinnerLabel
+            app.FrequecyintervalSpinnerLabel = uilabel(app.WindRosePanel);
+            app.FrequecyintervalSpinnerLabel.Position = [10 30 104 22];
+            app.FrequecyintervalSpinnerLabel.Text = 'Frequecy interval: ';
+
+            % Create FrequecyintervalSpinner
+            app.FrequecyintervalSpinner = uispinner(app.WindRosePanel);
+            app.FrequecyintervalSpinner.Position = [125 30 55 22];
+            app.FrequecyintervalSpinner.Value = 5;
+
+            % Create RoseMaxFreqSpinnerLabel_2
+            app.RoseMaxFreqSpinnerLabel_2 = uilabel(app.WindRosePanel);
+            app.RoseMaxFreqSpinnerLabel_2.Position = [200 60 119 22];
+            app.RoseMaxFreqSpinnerLabel_2.Text = 'Rose Max Freq. (%): ';
+
+            % Create Allyear0AutoLabel
+            app.Allyear0AutoLabel = uilabel(app.WindRosePanel);
+            app.Allyear0AutoLabel.Position = [10 90 103 22];
+            app.Allyear0AutoLabel.Text = 'All year (0: "Auto")';
+
+            % Create SeasonalMonthly0AutoLabel
+            app.SeasonalMonthly0AutoLabel = uilabel(app.WindRosePanel);
+            app.SeasonalMonthly0AutoLabel.Position = [200 90 170 22];
+            app.SeasonalMonthly0AutoLabel.Text = 'Seasonal & Monthly (0: "Auto")';
+
+            % Create FrequecyintervalSpinner_2Label
+            app.FrequecyintervalSpinner_2Label = uilabel(app.WindRosePanel);
+            app.FrequecyintervalSpinner_2Label.Position = [200 30 104 22];
+            app.FrequecyintervalSpinner_2Label.Text = 'Frequecy interval: ';
+
+            % Show the figure after all components are created
+            app.UIFigure.Visible = 'on';
+        end
+    end
+
+    % App creation and deletion
+    methods (Access = public)
+
+        % Construct app
+        function app = Properties_statistics(varargin)
+
+            % Create UIFigure and components
+            createComponents(app)
+
+            % Register the app with App Designer
+            registerApp(app, app.UIFigure)
+
+            % Execute the startup function
+            runStartupFcn(app, @(app)startupFcn(app, varargin{:}))
+
+            if nargout == 0
+                clear app
+            end
+        end
+
+        % Code that executes before app deletion
+        function delete(app)
+
+            % Delete UIFigure when app is deleted
+            delete(app.UIFigure)
+        end
+    end
+end
